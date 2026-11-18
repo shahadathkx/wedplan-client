@@ -4,12 +4,25 @@ type ApiRequestInit = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;
 };
 
-export async function apiFetch(path: string, init: ApiRequestInit = {}) {
+function apiUrl(path: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     throw new Error("NEXT_PUBLIC_API_URL is not configured.");
   }
+  return new URL(path, apiUrl);
+}
 
+export async function publicApiFetch(
+  path: string,
+  init: RequestInit = {},
+) {
+  return fetch(apiUrl(path), {
+    cache: "no-store",
+    ...init,
+  });
+}
+
+export async function apiFetch(path: string, init: ApiRequestInit = {}) {
   const tokenResponse = await fetch(authTokenPath, {
     credentials: "include",
     cache: "no-store",
@@ -26,7 +39,7 @@ export async function apiFetch(path: string, init: ApiRequestInit = {}) {
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
 
-  return fetch(new URL(path, apiUrl), {
+  return publicApiFetch(path, {
     ...init,
     headers,
   });
