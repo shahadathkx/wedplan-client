@@ -12,6 +12,8 @@ Better Auth configuration, shared UI, and client-side API integration.
 - Optional profile image upload through a server-side ImgBB integration.
 - Role-aware protected dashboards, profile settings, and live navbar session
   state.
+- Featured services, category discovery, responsive service search and filters,
+  service detail galleries, and authenticated booking requests.
 - Responsive marketing and authentication pages, ShadCN-compatible UI
   components, Motion animations, and Sonner toast notifications.
 
@@ -94,12 +96,21 @@ the hosted image URL. The key is never exposed to browser code.
 
 - `/` — WedPlan landing page
 - `/sign-up` and `/sign-in` — email/password and Google authentication
+- `/services` — searchable service directory with category, location, and price
+  filters
+- `/services/[id]` — authenticated service details and booking request form
 - `/dashboard` — redirects to the current user's role dashboard
 - `/customer/dashboard`, `/vendor/dashboard`, `/admin/dashboard` — role-protected
   dashboards
 - `/profile-settings` — authenticated profile editor using the Express API
 - `/api/auth/[...all]` — Better Auth handler
 - `/api/upload` — server-side ImgBB image upload
+
+The home page loads featured services from `GET /api/services/featured` and
+links each service category to a filtered `/services` result. Booking requests
+are sent to `POST /api/bookings` with the service ID, event date, event
+location, and message. The API remains authoritative for service visibility,
+booking ownership, duplicate requests, and role permissions.
 
 The Next.js 16 `src/proxy.ts` protects dashboard and profile routes. The Express
 API remains responsible for authorization on its own endpoints.
