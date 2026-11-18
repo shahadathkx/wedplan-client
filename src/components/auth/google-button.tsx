@@ -6,7 +6,13 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
-export function GoogleButton({ role }: { role?: "customer" | "vendor" }) {
+export function GoogleButton({
+  role,
+  callbackURL = "/dashboard",
+}: {
+  role?: "customer" | "vendor";
+  callbackURL?: string;
+}) {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
@@ -15,7 +21,7 @@ export function GoogleButton({ role }: { role?: "customer" | "vendor" }) {
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL,
         additionalData: role ? { role } : undefined,
       });
       if (result.error) {

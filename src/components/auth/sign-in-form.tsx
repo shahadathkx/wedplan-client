@@ -19,6 +19,11 @@ export function SignInForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const callbackURL = searchParams.get("callbackURL");
+  const safeCallback =
+    callbackURL?.startsWith("/") && !callbackURL.startsWith("//")
+      ? callbackURL
+      : undefined;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,12 +39,7 @@ export function SignInForm() {
       }
 
       toast.success("You are signed in.");
-      const callbackURL = searchParams.get("callbackURL");
-      const safeCallback =
-        callbackURL?.startsWith("/") && !callbackURL.startsWith("//")
-          ? callbackURL
-          : dashboardPath(result.data?.user.role);
-      router.push(safeCallback);
+      router.push(safeCallback ?? dashboardPath(result.data?.user.role));
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign-in failed.");
@@ -105,7 +105,9 @@ export function SignInForm() {
         OR
         <span className="h-px flex-1 bg-stone-200" />
       </div>
-      <GoogleButton />
+      <GoogleButton
+        callbackURL={safeCallback ?? dashboardPath()}
+      />
     </AuthCard>
   );
 }
