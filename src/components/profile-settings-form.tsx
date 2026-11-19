@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { authClient } from "@/lib/auth-client";
 
-export function ProfileSettingsForm() {
+export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }) {
   const { data: session, isPending } = authClient.useSession();
   const [name, setName] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
@@ -37,8 +37,10 @@ export function ProfileSettingsForm() {
     }
   }
 
+  const Wrapper = embedded ? "div" : "main";
+
   return (
-    <main className="flex-1 bg-[#faf7f4] px-5 py-12 sm:px-8 sm:py-16">
+    <Wrapper className={embedded ? "" : "flex-1 bg-[#faf7f4] px-5 py-12 sm:px-8 sm:py-16"}>
       <section className="mx-auto max-w-2xl rounded-[2rem] border border-stone-200 bg-white p-6 shadow-sm sm:p-10">
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">
           Account
@@ -54,6 +56,10 @@ export function ProfileSettingsForm() {
             <div className="h-12 animate-pulse rounded-xl bg-stone-100" />
             <div className="h-12 animate-pulse rounded-xl bg-stone-100" />
           </div>
+        ) : !session ? (
+          <p role="alert" className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+            Your account details could not be loaded. Please sign in again and retry.
+          </p>
         ) : (
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             <label className="block text-sm font-semibold text-stone-700">
@@ -90,6 +96,6 @@ export function ProfileSettingsForm() {
           </form>
         )}
       </section>
-    </main>
+    </Wrapper>
   );
 }
