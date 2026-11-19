@@ -25,7 +25,7 @@ export async function generateMetadata({
 
 export default async function RoleDashboard({ params }: RoleDashboardProps) {
   const { role } = await params;
-  if (role !== "customer" && role !== "admin") {
+  if (role !== "admin") {
     notFound();
   }
 

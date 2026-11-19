@@ -34,8 +34,9 @@ const navigation: Record<DashboardRole, DashboardLink[]> = {
   ],
   customer: [
     { label: "Overview", href: "/customer/dashboard", icon: LayoutDashboard, exact: true },
+    { label: "My Bookings", href: "/customer/dashboard/bookings", icon: CalendarDays, exact: true },
     { label: "Browse Services", href: "/services", icon: Search },
-    { label: "Profile Settings", href: "/profile-settings", icon: Settings },
+    { label: "Profile Settings", href: "/customer/dashboard/profile", icon: Settings, exact: true },
   ],
   admin: [
     { label: "Overview", href: "/admin/dashboard", icon: LayoutDashboard, exact: true },
