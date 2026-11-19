@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
-import { dashboardPath } from "@/lib/roles";
+import { notFound } from "next/navigation";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { requireDashboardUser } from "@/lib/dashboard-auth";
 
 export const instant = false;
 
@@ -26,21 +25,15 @@ export async function generateMetadata({
 
 export default async function RoleDashboard({ params }: RoleDashboardProps) {
   const { role } = await params;
-  if (!Object.hasOwn(roleTitles, role)) {
+  if (role !== "customer" && role !== "admin") {
     notFound();
   }
 
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session) {
-    redirect("/sign-in");
-  }
-  if (session.user.role !== role) {
-    redirect(dashboardPath(session.user.role));
-  }
+  const user = await requireDashboardUser(role);
 
   return (
-    <main className="flex-1 bg-[#faf7f4] px-5 py-12 sm:px-8 sm:py-16">
-      <div className="mx-auto max-w-5xl">
+    <DashboardShell role={role} userName={user.name}>
+      <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">
           {role} dashboard
         </p>
@@ -48,7 +41,7 @@ export default async function RoleDashboard({ params }: RoleDashboardProps) {
           {roleTitles[role]}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
-          Welcome back, {session.user.name}. Your WedPlan tools and activity will
+          Welcome back, {user.name}. Your WedPlan tools and activity will
           be right here as you get started.
         </p>
         <section className="mt-10 rounded-3xl border border-stone-200 bg-white p-8">
@@ -67,6 +60,6 @@ export default async function RoleDashboard({ params }: RoleDashboardProps) {
           </Link>
         </section>
       </div>
-    </main>
+    </DashboardShell>
   );
 }

@@ -17,6 +17,9 @@ export type WeddingService = {
   location: string;
   images: string[];
   vendor: VendorSummary | null;
+  status: string;
+  isAvailable: boolean;
+  createdAt: string;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -109,6 +112,9 @@ function normalizeService(value: unknown): WeddingService {
     location: asText(service.location, "Location available on request"),
     images,
     vendor,
+    status: asText(service.status, "pending"),
+    isAvailable: service.isAvailable === true,
+    createdAt: asText(service.createdAt),
   };
 }
 
