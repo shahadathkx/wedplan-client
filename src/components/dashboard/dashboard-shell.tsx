@@ -6,12 +6,14 @@ import { useState, type ComponentType } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
+  CreditCard,
   Crown,
   LayoutDashboard,
   Menu,
   Plus,
   Search,
   Settings,
+  Users,
   X,
 } from "lucide-react";
 import type { DashboardRole } from "@/lib/dashboard-auth";
@@ -40,7 +42,9 @@ const navigation: Record<DashboardRole, DashboardLink[]> = {
   ],
   admin: [
     { label: "Overview", href: "/admin/dashboard", icon: LayoutDashboard, exact: true },
-    { label: "Profile Settings", href: "/profile-settings", icon: Settings },
+    { label: "Manage Users", href: "/admin/dashboard/users", icon: Users, exact: true },
+    { label: "Manage Services", href: "/admin/dashboard/services", icon: BriefcaseBusiness, exact: true },
+    { label: "Transactions", href: "/admin/dashboard/transactions", icon: CreditCard, exact: true },
   ],
 };
 
