@@ -8,6 +8,8 @@ const protectedPaths = [
   "/vendor/dashboard",
   "/admin/dashboard",
   "/profile-settings",
+  "/payment-success",
+  "/payment-cancel",
 ];
 
 export async function proxy(request: NextRequest) {
@@ -52,5 +54,7 @@ export const config = {
     "/vendor/dashboard/:path*",
     "/admin/dashboard/:path*",
     "/profile-settings/:path*",
+    "/payment-success/:path*",
+    "/payment-cancel/:path*",
   ],
 };
