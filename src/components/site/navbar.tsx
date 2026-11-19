@@ -32,6 +32,16 @@ export function Navbar() {
     router.refresh();
   }
 
+  function profileHref() {
+    if (user?.role === "customer") {
+      return "/customer/dashboard/profile";
+    }
+    if (user?.role === "vendor") {
+      return "/vendor/dashboard/profile";
+    }
+    return "/profile-settings";
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-stone-200/70 bg-[#fffdfa]/95 backdrop-blur-md">
       <div className="mx-auto flex h-[76px] max-w-7xl items-center justify-between px-5 sm:px-8">
@@ -84,7 +94,7 @@ export function Navbar() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/profile-settings"
+                  href={profileHref()}
                   className="block rounded-xl px-3 py-2.5 text-sm text-stone-700 hover:bg-rose-50 hover:text-rose-900"
                 >
                   Profile Settings
@@ -155,7 +165,7 @@ export function Navbar() {
                   Dashboard
                 </Link>
                 <Link
-                  href="/profile-settings"
+                  href={profileHref()}
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-rose-50"
                 >
