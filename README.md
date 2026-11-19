@@ -1,136 +1,178 @@
 # WedPlan Client
 
-WedPlan is a responsive wedding-planning platform for customers, vendors, and
-administrators. This repository contains the Next.js App Router client,
-Better Auth configuration, shared UI, and client-side API integration.
+## Description
+
+WedPlan is a responsive role-based wedding services platform built for couples,
+vendors, and administrators. Customers discover wedding professionals and
+request bookings; vendors manage listings, availability, booking requests,
+profiles, and subscriptions; administrators moderate users and services and
+review transactions.
 
 ## Features
 
-- Email/password and Google sign-in using Better Auth.
-- MongoDB-backed users and JWT/JWKS support for the Express API.
-- Customer/vendor role selection at signup; admin is not a public signup role.
-- Optional profile image upload through a server-side ImgBB integration.
-- Role-aware protected dashboards, profile settings, and live navbar session
-  state.
-- Featured services, category discovery, responsive service search and filters,
-  service detail galleries, and authenticated booking requests.
-- Responsive marketing and authentication pages, ShadCN-compatible UI
-  components, Motion animations, and Sonner toast notifications.
+- Better Auth email/password and Google sign-in with MongoDB and JWT support
+- Protected customer, vendor, and admin dashboards
+- Customer booking overview, booking history, details, cancellation, and profile
+  settings
+- Vendor statistics, service management, image uploads, booking responses,
+  subscription comparison, and Stripe Checkout
+- Admin user moderation, service approval/rejection, status management, deletion,
+  and read-only transactions
+- Server-verified payment success polling and payment cancellation
+- Responsive navigation, service discovery, filters, loading, empty, and error
+  states
+- Motion animations, Sonner notifications, and a custom 404 page
 
 ## Tech Stack
 
-- Next.js App Router, React, and TypeScript
-- Tailwind CSS v4 and ShadCN-compatible components
-- Better Auth with the MongoDB adapter and JWT plugin
-- Motion, Lucide, and Sonner
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Better Auth, MongoDB, and JWT/JWKS
+- ShadCN-compatible Radix UI components
+- Motion and Lucide icons
+- Sonner toast notifications
+- ImgBB image hosting
+- Stripe Checkout
 
-## Requirements
+## Repositories
+
+- **Client:** https://github.com/shahadathkx/wedplan-client.git
+- **Server:** https://github.com/shahadathkx/wedplan-server.git
+
+## Live Link
+
+Add the deployed WedPlan client URL here after deployment.
+
+The local client runs at `http://localhost:3000`.
+
+## Prerequisites
 
 - Node.js 20.9 or later
 - npm
 - MongoDB
-- A Google OAuth client for Google sign-in
-- An ImgBB API key for profile image uploads
-- The WedPlan Express API for authenticated platform operations
+- A Google OAuth application
+- An ImgBB API key
+- A running WedPlan Express API
+- Stripe credentials and webhook configuration on the server
 
-## Getting Started
+## Install
 
-1. Install dependencies:
+```bash
+npm install
+```
 
-   ```bash
-   npm install
-   ```
+Copy the environment template:
 
-2. Copy `.env.example` to `.env.local` and fill in the required values.
+```bash
+cp .env.example .env.local
+```
 
-3. Configure the Google OAuth authorized redirect URI as:
+On Windows PowerShell, you can instead copy it with:
 
-   ```text
-   http://localhost:3000/api/auth/callback/google
-   ```
+```powershell
+Copy-Item .env.example .env.local
+```
 
-4. Start the development server:
+## Run Locally
 
-   ```bash
-   npm run dev
-   ```
+Start the Express API on its configured origin, then start the client:
 
-5. Open [http://localhost:3000](http://localhost:3000).
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+Use these scripts for validation and production builds:
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+npm start
+```
 
 ## Environment Variables
 
 | Variable | Required | Description |
 | --- | --- | --- |
-| `BETTER_AUTH_SECRET` | Yes | Random secret used by Better Auth. Use a unique, long value. |
-| `BETTER_AUTH_URL` | Yes | Public origin of this Next.js app, such as `http://localhost:3000`. |
-| `MONGODB_URI` | Yes | MongoDB connection string. |
-| `MONGODB_DB` | No | MongoDB database name. Defaults to `wedplan`. |
-| `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth client ID. |
+| `BETTER_AUTH_SECRET` | Yes | Secret used to sign Better Auth sessions and operations. |
+| `BETTER_AUTH_URL` | Yes | Public origin of the Next.js application. |
+| `MONGODB_URI` | Yes | MongoDB connection URI used by Better Auth. |
+| `MONGODB_DB` | Optional | MongoDB database name. |
+| `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth client identifier. |
 | `GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth client secret. |
-| `IMGBB_API_KEY` | For image upload | ImgBB API key. It is only read by `/api/upload` on the server. |
-| `NEXT_PUBLIC_API_URL` | Yes for API features | Origin of the Express API, for example `http://localhost:5000`. |
+| `IMGBB_API_KEY` | For image uploads | Server-only ImgBB API key. |
+| `NEXT_PUBLIC_API_URL` | Yes | Public origin of the WedPlan Express API. |
 
-Never commit `.env`, `.env.local`, or production secrets. The committed
-`.env.example` contains placeholders only.
+Values are documented only in `.env.example`. Never commit `.env`, `.env.local`,
+or production secrets.
 
-## Authentication and API Integration
+## Required URLs
 
-Better Auth serves its endpoints at `/api/auth/*`. The signup role field is
-validated server-side and accepts only `customer` or `vendor`; role, blocked
-state, and subscription fields cannot be provided by the signup client.
-Passwords must be at least six characters and contain uppercase and lowercase
-letters.
+### Local development
 
-The JWT plugin exposes the JWKS endpoint at
-`/api/auth/jwks`. The client API helper retrieves a session JWT from
-`/api/auth/token` and sends it to the Express API in an
-`Authorization: Bearer <token>` header. Express must verify that JWT and load
-authorization data from its user collection; it must not trust a client-supplied
-role.
+- Better Auth callback:
+  `http://localhost:3000/api/auth/callback/google`
+- Better Auth base URL:
+  `http://localhost:3000`
+- Express API:
+  `http://localhost:5000`
+- Payment success return:
+  `http://localhost:3000/payment-success`
+- Payment cancel return:
+  `http://localhost:3000/payment-cancel`
 
-Profile image uploads are sent to the Next.js `/api/upload` route. The route
-validates image type and size, uses `IMGBB_API_KEY` on the server, and returns
-the hosted image URL. The key is never exposed to browser code.
+### Production
+
+- Set `BETTER_AUTH_URL` to the deployed client origin.
+- Register `<deployed-client-origin>/api/auth/callback/google` as a Google OAuth
+  authorized redirect URI.
+- Configure Express CORS to allow only the deployed client origin.
+- Set `NEXT_PUBLIC_API_URL` to the deployed Express API origin.
+- Configure Stripe Checkout success and cancel URLs to the deployed
+  `/payment-success` and `/payment-cancel` routes.
+- Configure the Stripe webhook on the Express API; the webhook must verify
+  payment status and update the vendor subscription plan on the server.
 
 ## Routes
 
-- `/` — WedPlan landing page
-- `/sign-up` and `/sign-in` — email/password and Google authentication
-- `/services` — searchable service directory with category, location, and price
-  filters
-- `/services/[id]` — authenticated service details and booking request form
-- `/dashboard` — redirects to the current user's role dashboard
-- `/customer/dashboard`, `/vendor/dashboard`, `/admin/dashboard` — role-protected
-  dashboards
-- `/profile-settings` — authenticated profile editor using the Express API
-- `/api/auth/[...all]` — Better Auth handler
-- `/api/upload` — server-side ImgBB image upload
+- `/` - Home
+- `/services` - Browse and filter services
+- `/services/[id]` - Service details and booking form
+- `/sign-up` - Customer/vendor registration
+- `/sign-in` - Email/password and Google sign-in
+- `/dashboard` - Role-based dashboard redirect
+- `/customer/dashboard` - Customer overview
+- `/customer/dashboard/bookings` - Customer booking management
+- `/customer/dashboard/profile` - Customer profile settings
+- `/vendor/dashboard` - Vendor overview
+- `/vendor/dashboard/services` - Vendor service management
+- `/vendor/dashboard/services/new` - Add service
+- `/vendor/dashboard/bookings` - Vendor booking requests
+- `/vendor/dashboard/subscription` - Free/Premium plans
+- `/vendor/dashboard/profile` - Vendor profile settings
+- `/admin/dashboard` - Admin overview
+- `/admin/dashboard/users` - User management
+- `/admin/dashboard/services` - Service moderation
+- `/admin/dashboard/transactions` - Read-only transactions
+- `/payment-success` - Server-verified Premium activation confirmation
+- `/payment-cancel` - Cancelled Checkout return
+- `/api/upload` - Server-side ImgBB image upload
+- `/api/auth/[...all]` - Better Auth handler
 
-The home page loads featured services from `GET /api/services/featured` and
-links each service category to a filtered `/services` result. Booking requests
-are sent to `POST /api/bookings` with the service ID, event date, event
-location, and message. The API remains authoritative for service visibility,
-booking ownership, duplicate requests, and role permissions.
+## Authentication and Payments
 
-The Next.js 16 `src/proxy.ts` protects dashboard and profile routes. The Express
-API remains responsible for authorization on its own endpoints.
+The signup role is restricted to `customer` or `vendor`. Subscription plan,
+expiry, and blocked status are server-controlled fields and cannot be granted
+from browser input.
 
-## Scripts
+The client retrieves a JWT for authenticated Express API requests. Express must
+verify that token and enforce role and resource ownership checks.
 
-```bash
-npm run dev       # Start Next.js in development
-npm run lint      # Run ESLint
-npx tsc --noEmit  # Check TypeScript types
-npm run build     # Create a production build
-npm start         # Serve the production build
-```
-
-## Production Notes
-
-- Set all environment variables in the deployment platform; do not expose
-  server-only secrets with the `NEXT_PUBLIC_` prefix.
-- Set `BETTER_AUTH_URL` to the production app origin and add the matching Google
-  OAuth callback URI.
-- Set `NEXT_PUBLIC_API_URL` to the deployed Express API origin and configure
-  Express CORS to allow only the client origin.
-- Serve the app and API over HTTPS in production.
+The success page polls `/api/me` and only shows a confirmed state after the
+server returns `subscriptionPlan: "premium"`. It does not write subscription
+state in the browser or grant any feature entitlement client-side. Stripe
+webhook verification and server-side plan updates remain authoritative.
