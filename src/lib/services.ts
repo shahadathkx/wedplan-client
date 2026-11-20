@@ -167,28 +167,66 @@ export function normalizeServiceDetails(payload: unknown) {
   return normalizeService(service);
 }
 
-async function requestServiceApi(path: string, signal?: AbortSignal) {
-  try {
-    return await publicApiFetch(path, { signal });
-  } catch (error) {
-    if (error instanceof TypeError) {
-      throw new Error(
-        "We couldn't connect to the services directory. Please try again shortly.",
-      );
-    }
-    throw error;
+function serviceApiUrl(path: string) {
+  const apiOrigin = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiOrigin) {
+    throw new Error("NEXT_PUBLIC_API_URL is not configured.");
   }
+  return new URL(path, apiOrigin).href;
+}
+
+async function requestServiceApi(path: string, signal?: AbortSignal) {
+  return publicApiFetch(path, { signal });
 }
 
 export async function fetchServiceList(
   endpoint: string,
   signal?: AbortSignal,
 ) {
-  const response = await requestServiceApi(endpoint, signal);
-  if (!response.ok) {
-    throw await responseError(response);
+  const requestUrl = serviceApiUrl(endpoint);
+  let response: Response;
+  try {
+    response = await publicApiFetch(endpoint, { signal });
+  } catch (error) {
+    if (
+      signal?.aborted ||
+      (error instanceof DOMException && error.name === "AbortError")
+    ) {
+      throw error;
+    }
+    console.error("[services] Request failed", {
+      message: `[services] Request failed: ${requestUrl} (env: NEXT_PUBLIC_API_URL)`,
+      error,
+    });
+    throw error;
   }
-  return normalizeServiceList(await response.json());
+  if (!response.ok) {
+    const error = await responseError(response);
+    console.error("[services] Request failed", {
+      message: `[services] Request failed: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      error,
+    });
+    throw error;
+  }
+  let payload: unknown;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    console.error("[services] Invalid JSON response", {
+      message: `[services] Invalid JSON response: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      error,
+    });
+    throw new Error(`Services API returned invalid JSON (${response.status}).`);
+  }
+  try {
+    return normalizeServiceList(payload);
+  } catch (error) {
+    console.error("[services] Invalid services response", {
+      message: `[services] Invalid services response: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      error,
+    });
+    throw error;
+  }
 }
 
 export async function fetchServiceDetails(id: string, signal?: AbortSignal) {

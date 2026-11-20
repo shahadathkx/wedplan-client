@@ -77,11 +77,23 @@ Copy-Item .env.example .env.local
 
 ## Run Locally
 
-Start the Express API on its configured origin, then start the client:
+Start the Express API and the Next.js client in separate terminals. From the
+server checkout, start the API first:
+
+```bash
+cd ../wedplan-server
+npm run dev
+```
+
+In another terminal, from this client checkout, start Next.js:
 
 ```bash
 npm run dev
 ```
+
+The local API listens on port `5000` by default, and the client is configured
+for `http://localhost:5000` in `.env.local`. Keep both development servers
+running while using the app.
 
 Open `http://localhost:3000`.
 

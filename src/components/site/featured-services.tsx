@@ -29,12 +29,19 @@ export function FeaturedServices() {
         if (cause instanceof DOMException && cause.name === "AbortError") {
           return;
         }
+        if (controller.signal.aborted) {
+          return;
+        }
         setError(
           cause instanceof Error ? cause.message : "Featured services could not be loaded.",
         );
         toast.error("Featured services could not be loaded.");
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false);
+        }
+      });
 
     return () => controller.abort();
   }, [retry]);
