@@ -1,4 +1,4 @@
-import { publicApiFetch } from "@/lib/api";
+import { publicApiFetch, resolveApiUrl } from "@/lib/api";
 
 export type VendorSummary = {
   id: string;
@@ -167,14 +167,6 @@ export function normalizeServiceDetails(payload: unknown) {
   return normalizeService(service);
 }
 
-function serviceApiUrl(path: string) {
-  const apiOrigin = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiOrigin) {
-    throw new Error("NEXT_PUBLIC_API_URL is not configured.");
-  }
-  return new URL(path, apiOrigin).href;
-}
-
 async function requestServiceApi(path: string, signal?: AbortSignal) {
   return publicApiFetch(path, { signal });
 }
@@ -183,10 +175,21 @@ export async function fetchServiceList(
   endpoint: string,
   signal?: AbortSignal,
 ) {
-  const requestUrl = serviceApiUrl(endpoint);
+  let requestUrl: URL;
+  try {
+    requestUrl = resolveApiUrl(endpoint);
+  } catch (error) {
+    console.error("[services] Request URL configuration failed", {
+      endpoint,
+      envVar: "NEXT_PUBLIC_API_URL",
+      error,
+    });
+    throw error;
+  }
+
   let response: Response;
   try {
-    response = await publicApiFetch(endpoint, { signal });
+    response = await publicApiFetch(requestUrl.href, { signal });
   } catch (error) {
     if (
       signal?.aborted ||
@@ -195,7 +198,7 @@ export async function fetchServiceList(
       throw error;
     }
     console.error("[services] Request failed", {
-      message: `[services] Request failed: ${requestUrl} (env: NEXT_PUBLIC_API_URL)`,
+      message: `[services] Request failed: ${requestUrl.href} (env: NEXT_PUBLIC_API_URL)`,
       error,
     });
     throw error;
@@ -203,7 +206,7 @@ export async function fetchServiceList(
   if (!response.ok) {
     const error = await responseError(response);
     console.error("[services] Request failed", {
-      message: `[services] Request failed: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      message: `[services] Request failed: ${response.url || requestUrl.href} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
       error,
     });
     throw error;
@@ -213,7 +216,7 @@ export async function fetchServiceList(
     payload = await response.json();
   } catch (error) {
     console.error("[services] Invalid JSON response", {
-      message: `[services] Invalid JSON response: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      message: `[services] Invalid JSON response: ${response.url || requestUrl.href} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
       error,
     });
     throw new Error(`Services API returned invalid JSON (${response.status}).`);
@@ -222,7 +225,7 @@ export async function fetchServiceList(
     return normalizeServiceList(payload);
   } catch (error) {
     console.error("[services] Invalid services response", {
-      message: `[services] Invalid services response: ${response.url || requestUrl} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
+      message: `[services] Invalid services response: ${response.url || requestUrl.href} (env: NEXT_PUBLIC_API_URL, status: ${response.status})`,
       error,
     });
     throw error;

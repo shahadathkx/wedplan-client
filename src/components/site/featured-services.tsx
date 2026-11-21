@@ -125,7 +125,7 @@ export function FeaturedServices() {
           <div className="mt-9 rounded-3xl border border-dashed border-stone-300 bg-[#fffdfa] px-6 py-12 text-center">
             <Heart className="mx-auto size-7 text-rose-700" />
             <p className="mt-3 font-serif text-xl text-stone-900">
-              New services are on their way
+              No featured services yet
             </p>
             <p className="mt-2 text-sm text-stone-500">
               Check back soon to meet our wedding professionals.

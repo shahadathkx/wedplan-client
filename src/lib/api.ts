@@ -4,7 +4,7 @@ type ApiRequestInit = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;
 };
 
-function apiUrl(path: string) {
+export function resolveApiUrl(path: string) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) {
     throw new Error("NEXT_PUBLIC_API_URL is not configured.");
@@ -16,7 +16,7 @@ export async function publicApiFetch(
   path: string,
   init: RequestInit = {},
 ) {
-  return fetch(apiUrl(path), {
+  return fetch(resolveApiUrl(path), {
     cache: "no-store",
     ...init,
   });
