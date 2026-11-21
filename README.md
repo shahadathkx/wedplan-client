@@ -139,15 +139,33 @@ or production secrets.
 
 ### Production
 
-- Set `BETTER_AUTH_URL` to the deployed client origin.
+- Set `BETTER_AUTH_URL` to `https://wedplan-client-eight.vercel.app`.
 - Register `<deployed-client-origin>/api/auth/callback/google` as a Google OAuth
   authorized redirect URI.
-- Configure Express CORS to allow only the deployed client origin.
-- Set `NEXT_PUBLIC_API_URL` to the deployed Express API origin.
+- Configure Express CORS to allow only
+  `https://wedplan-client-eight.vercel.app` (and localhost during development).
+- Set `NEXT_PUBLIC_API_URL` to
+  `https://wedplan-server-skhe.vercel.app`. This value is embedded at build
+  time, so redeploy after changing it. Never set it to localhost in Vercel.
 - Configure Stripe Checkout success and cancel URLs to the deployed
   `/payment-success` and `/payment-cancel` routes.
 - Configure the Stripe webhook on the Express API; the webhook must verify
   payment status and update the vendor subscription plan on the server.
+
+### Vercel environment variables
+
+Set these in the **client** Vercel project:
+
+| Variable | Required | Value or purpose |
+| --- | --- | --- |
+| `BETTER_AUTH_SECRET` | Yes | A private Better Auth signing secret. |
+| `BETTER_AUTH_URL` | Yes | `https://wedplan-client-eight.vercel.app` |
+| `MONGODB_URI` | Yes | MongoDB connection URI shared with the server project. |
+| `NEXT_PUBLIC_API_URL` | Yes | `https://wedplan-server-skhe.vercel.app` |
+| `MONGODB_DB` | No | Better Auth database name; defaults to `wedplan`. |
+| `GOOGLE_CLIENT_ID` | For Google sign-in | Google OAuth client ID. |
+| `GOOGLE_CLIENT_SECRET` | For Google sign-in | Google OAuth client secret. |
+| `IMGBB_API_KEY` | For uploads | Server-only ImgBB API key. |
 
 ## Routes
 
