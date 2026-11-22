@@ -9,11 +9,14 @@ const globalForMongo = globalThis as typeof globalThis & {
   mongoClient?: MongoClient;
 };
 
+const mongoUri = process.env.MONGODB_URI?.trim();
+if (!mongoUri && process.env.NODE_ENV === "production") {
+  throw new Error("MONGODB_URI must be configured in production.");
+}
+
 const mongoClient =
   globalForMongo.mongoClient ??
-  new MongoClient(
-    process.env.MONGODB_URI || "mongodb://127.0.0.1:27017",
-  );
+  new MongoClient(mongoUri || "mongodb://127.0.0.1:27017");
 
 if (process.env.NODE_ENV !== "production") {
   globalForMongo.mongoClient = mongoClient;
