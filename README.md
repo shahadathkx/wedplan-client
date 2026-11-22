@@ -43,7 +43,7 @@ review transactions.
 
 ## Live Link
 
-Add the deployed WedPlan client URL here after deployment.
+https://wedplan-client-eight.vercel.app
 
 The local client runs at `http://localhost:3000`.
 
