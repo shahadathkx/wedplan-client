@@ -43,6 +43,7 @@ export type AdminStats = {
   totalServices: number;
   pendingServices: number;
   totalBookings: number;
+  totalTransactions: number;
   revenueByCurrency: Array<{ currency: string; amount: number }>;
 };
 
@@ -233,7 +234,8 @@ function unwrapRecord(payload: unknown): Record<string, unknown> {
       "totalUsers" in record ||
       "users" in record ||
       "totalServices" in record ||
-      "pendingServices" in record
+      "pendingServices" in record ||
+      "totalTransactions" in record
     ) {
       return record;
     }
@@ -285,6 +287,11 @@ export function normalizeAdminStats(payload: unknown): AdminStats {
     totalServices: numberValue(["totalServices", "serviceCount", "services"]),
     pendingServices: numberValue(["pendingServices", "pendingServiceCount"]),
     totalBookings: numberValue(["totalBookings", "bookingCount", "bookings"]),
+    totalTransactions: numberValue([
+      "totalTransactions",
+      "transactionCount",
+      "transactions",
+    ]),
     revenueByCurrency,
   };
 }

@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   ArrowRight,
+  BadgeCheck,
   BriefcaseBusiness,
   CalendarCheck2,
   CalendarClock,
+  Crown,
   Eye,
   LoaderCircle,
   RefreshCw,
 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 import { normalizeVendorStats, vendorApiFetch } from "@/lib/vendor-api";
 
 type LoadState = {
@@ -44,9 +47,16 @@ const cards = [
     icon: CalendarClock,
     href: "/vendor/dashboard/bookings",
   },
+  {
+    key: "acceptedBookings",
+    label: "Accepted bookings",
+    icon: BadgeCheck,
+    href: "/vendor/dashboard/bookings",
+  },
 ] as const;
 
 export function VendorOverview() {
+  const { data: session, isPending: sessionPending } = authClient.useSession();
   const [state, setState] = useState<LoadState>({
     loading: true,
     error: null,
@@ -156,6 +166,30 @@ export function VendorOverview() {
             </div>
           </Link>
         ))}
+        <Link
+          href="/vendor/dashboard/subscription"
+          className="group rounded-2xl border border-stone-200 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          <div className="flex items-start justify-between">
+            <span className="flex size-11 items-center justify-center rounded-xl bg-amber-50 text-amber-800">
+              <Crown className="size-5" />
+            </span>
+            <ArrowRight className="size-4 text-stone-300 transition group-hover:translate-x-1 group-hover:text-rose-700" />
+          </div>
+          <p className="mt-6 text-sm font-medium text-stone-500">Current plan</p>
+          <div className="mt-1 flex min-h-9 items-center">
+            {sessionPending ? (
+              <LoaderCircle
+                className="size-5 animate-spin text-stone-300"
+                aria-label="Loading"
+              />
+            ) : (
+              <p className="font-serif text-3xl capitalize text-stone-900">
+                {session?.user.subscriptionPlan ?? "free"}
+              </p>
+            )}
+          </div>
+        </Link>
       </section>
 
       <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">

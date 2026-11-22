@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
   CalendarDays,
+  CreditCard,
   LoaderCircle,
   RefreshCw,
   ShieldCheck,
@@ -67,6 +68,7 @@ export function AdminOverview() {
     { label: "Total services", value: stats?.totalServices, icon: BriefcaseBusiness },
     { label: "Pending services", value: stats?.pendingServices, icon: RefreshCw },
     { label: "Total bookings", value: stats?.totalBookings, icon: CalendarDays },
+    { label: "Transactions", value: stats?.totalTransactions, icon: CreditCard },
   ];
 
   return (

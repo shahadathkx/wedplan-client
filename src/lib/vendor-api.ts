@@ -6,6 +6,7 @@ export type VendorStats = {
   availableServices: number;
   totalBookings: number;
   pendingBookings: number;
+  acceptedBookings: number;
 };
 
 export type VendorBooking = {
@@ -98,6 +99,10 @@ export function normalizeVendorStats(payload: unknown): VendorStats {
       "pendingBookings",
       "pendingBookingCount",
       "bookingRequests",
+    ]),
+    acceptedBookings: asNumber(stats, [
+      "acceptedBookings",
+      "acceptedBookingCount",
     ]),
   };
 }
