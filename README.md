@@ -193,6 +193,25 @@ Set these in the **client** Vercel project:
 - `/api/upload` - Server-side ImgBB image upload
 - `/api/auth/[...all]` - Better Auth handler
 
+## Signing in to dashboards
+
+1. Open `/sign-up`, choose **Customer** or **Vendor**, and create an account.
+   The password must have at least 6 characters, including an uppercase and a
+   lowercase letter. Google sign-in is also available when configured.
+2. Open `/sign-in` and use the same email and password (or the same Google
+   account). WedPlan redirects you to the dashboard for the role assigned to
+   your account:
+   - Customer: `/customer/dashboard`
+   - Vendor: `/vendor/dashboard`
+   - Admin: `/admin/dashboard`
+3. Admin accounts cannot be self-registered. A server operator must create one
+   with `npm run seed:admin` in the server repository, setting `ADMIN_NAME`,
+   `ADMIN_EMAIL`, and `ADMIN_PASSWORD`. Sign in at `/sign-in` using those
+   credentials; you will be redirected to the admin dashboard.
+
+There are no shared/default dashboard credentials. Use only accounts you created
+or that the server operator provisioned for you.
+
 ## Authentication and Payments
 
 The signup role is restricted to `customer` or `vendor`. Subscription plan,
