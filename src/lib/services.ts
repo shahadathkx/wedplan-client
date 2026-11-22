@@ -189,7 +189,7 @@ export async function fetchServiceList(
 
   let response: Response;
   try {
-    response = await publicApiFetch(requestUrl.href, { signal });
+    response = await publicApiFetch(endpoint, { signal });
   } catch (error) {
     if (
       signal?.aborted ||
@@ -197,10 +197,6 @@ export async function fetchServiceList(
     ) {
       throw error;
     }
-    console.error("[services] Request failed", {
-      message: `[services] Request failed: ${requestUrl.href} (env: NEXT_PUBLIC_API_URL)`,
-      error,
-    });
     throw error;
   }
   if (!response.ok) {

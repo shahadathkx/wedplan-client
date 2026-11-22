@@ -52,22 +52,69 @@ test("service fetch failure logs the exact request URL and original error", asyn
   try {
     await assert.rejects(
       fetchServiceList("/api/services/featured?limit=6"),
-      networkError,
+      (error: unknown) => {
+        assert.equal(error instanceof Error, true);
+        const thrownError = error as Error;
+        assert.match(thrownError.message, /network error: Failed to fetch/);
+        assert.match(
+          thrownError.message,
+          /https:\/\/api\.example\.test\/api\/services\/featured\?limit=6/,
+        );
+        return true;
+      },
     );
     assert.equal(loggedErrors.length, 1);
-    assert.equal(loggedErrors[0][0], "[services] Request failed");
+    assert.equal(loggedErrors[0][0], "[api] Express API request failed");
     const details = loggedErrors[0][1] as {
-      message: string;
+      url: string;
+      envVar: string;
       error: unknown;
     };
-    assert.equal(
-      details.message,
-      "[services] Request failed: https://api.example.test/api/services/featured?limit=6 (env: NEXT_PUBLIC_API_URL)",
-    );
+    assert.equal(details.url, "https://api.example.test/api/services/featured?limit=6");
+    assert.equal(details.envVar, "NEXT_PUBLIC_API_URL");
     assert.equal(details.error, networkError);
   } finally {
     globalThis.fetch = previousFetch;
     console.error = previousConsoleError;
+    if (previousApiUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_URL = previousApiUrl;
+    }
+  }
+});
+
+test("service fetch strips a trailing slash and reports a missing env variable", async () => {
+  const previousApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const previousFetch = globalThis.fetch;
+
+  process.env.NEXT_PUBLIC_API_URL = "https://api.example.test/";
+  globalThis.fetch = async (input) => {
+    assert.equal(
+      String(input),
+      "https://api.example.test/api/services/featured?limit=6",
+    );
+    return new Response(JSON.stringify({ services: [] }), { status: 200 });
+  };
+
+  try {
+    await fetchServiceList("/api/services/featured?limit=6");
+  } finally {
+    if (previousApiUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_URL = previousApiUrl;
+    }
+  }
+
+  delete process.env.NEXT_PUBLIC_API_URL;
+  try {
+    await assert.rejects(
+      fetchServiceList("/api/services/featured?limit=6"),
+      /NEXT_PUBLIC_API_URL is not configured/,
+    );
+  } finally {
+    globalThis.fetch = previousFetch;
     if (previousApiUrl === undefined) {
       delete process.env.NEXT_PUBLIC_API_URL;
     } else {
