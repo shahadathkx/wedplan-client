@@ -12,26 +12,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  customerApiFetch,
-  normalizeCustomerBookings,
+  cancelCustomerBooking,
+  fetchCustomerBookings,
   type CustomerBooking,
 } from "@/lib/customer-api";
-
-async function fetchBookings(signal?: AbortSignal) {
-  try {
-    const response = await customerApiFetch("/api/customer/bookings", { signal });
-    return normalizeCustomerBookings(await response.json());
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes("(404)") || error.message.includes("not found"))
-    ) {
-      const response = await customerApiFetch("/api/bookings", { signal });
-      return normalizeCustomerBookings(await response.json());
-    }
-    throw error;
-  }
-}
 
 function formatDate(value: string) {
   if (!value) {
@@ -65,7 +49,7 @@ export function CustomerBookings() {
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      return await fetchBookings(signal);
+      return await fetchCustomerBookings(signal);
     } catch (cause) {
       if (!signal?.aborted) {
         throw cause;
@@ -126,10 +110,7 @@ export function CustomerBookings() {
 
     setBusyId(booking.id);
     try {
-      await customerApiFetch(
-        `/api/bookings/${encodeURIComponent(booking.id)}`,
-        { method: "DELETE" },
-      );
+      await cancelCustomerBooking(booking.id);
       setBookings((current) =>
         current?.map((item) =>
           item.id === booking.id ? { ...item, status: "cancelled" } : item,

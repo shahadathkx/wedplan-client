@@ -12,26 +12,10 @@ import {
 } from "lucide-react";
 import {
   customerApiFetch,
+  fetchCustomerBookings,
   deriveCustomerStats,
-  normalizeCustomerBookings,
   type CustomerStats,
 } from "@/lib/customer-api";
-
-async function fetchBookings(signal?: AbortSignal) {
-  try {
-    const response = await customerApiFetch("/api/customer/bookings", { signal });
-    return normalizeCustomerBookings(await response.json());
-  } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.message.includes("(404)") || error.message.includes("not found"))
-    ) {
-      const response = await customerApiFetch("/api/bookings", { signal });
-      return normalizeCustomerBookings(await response.json());
-    }
-    throw error;
-  }
-}
 
 export function CustomerOverview() {
   const [stats, setStats] = useState<CustomerStats | null>(null);
@@ -72,7 +56,7 @@ export function CustomerOverview() {
           rejected: numberValue(["rejected", "rejectedBookings"]),
         } satisfies CustomerStats;
       } else {
-        return deriveCustomerStats(await fetchBookings(signal));
+        return deriveCustomerStats(await fetchCustomerBookings(signal));
       }
     } catch (cause) {
       if (signal?.aborted) {

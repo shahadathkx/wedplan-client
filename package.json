@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test src/lib/services-fetch.test.ts"
+    "test": "tsx --test src/lib/services-fetch.test.ts src/lib/customer-api.test.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",

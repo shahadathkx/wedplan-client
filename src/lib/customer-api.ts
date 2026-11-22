@@ -152,6 +152,18 @@ export function normalizeCustomerBookings(payload: unknown) {
   return list.map(normalizeBooking);
 }
 
+export async function fetchCustomerBookings(signal?: AbortSignal) {
+  const response = await customerApiFetch("/api/customer/bookings", { signal });
+  return normalizeCustomerBookings(await response.json());
+}
+
+export async function cancelCustomerBooking(bookingId: string) {
+  return customerApiFetch(
+    `/api/customer/bookings/${encodeURIComponent(bookingId)}/cancel`,
+    { method: "PATCH" },
+  );
+}
+
 export function deriveCustomerStats(bookings: CustomerBooking[]): CustomerStats {
   return {
     total: bookings.length,
