@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCw, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,14 +24,22 @@ export function AdminServices() {
   const [status, setStatus] = useState("all");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    const response = await adminApiFetch("/api/admin/services", { signal });
+  const load = useCallback(async (
+    signal?: AbortSignal,
+    searchValue = "",
+    statusValue = "all",
+  ) => {
+    const params = new URLSearchParams({ limit: "100" });
+    if (searchValue.trim()) params.set("q", searchValue.trim());
+    if (statusValue !== "all") params.set("status", statusValue);
+    const response = await adminApiFetch(`/api/admin/services?${params}`, { signal });
     return normalizeAdminServices(await response.json());
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal)
+    const timeoutId = window.setTimeout(() => {
+      void load(controller.signal, search, status)
       .then((result) => {
         if (!controller.signal.aborted) setServices(result);
       })
@@ -43,26 +51,18 @@ export function AdminServices() {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
-  }, [load]);
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (services ?? []).filter((service) => {
-      const matchesSearch =
-        !term ||
-        service.serviceName.toLowerCase().includes(term) ||
-        service.category.toLowerCase().includes(term) ||
-        service.vendorName.toLowerCase().includes(term);
-      return matchesSearch && (status === "all" || service.status === status);
-    });
-  }, [services, search, status]);
+    }, 250);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [load, search, status]);
 
   async function retry() {
     setLoading(true);
     setError(null);
     try {
-      setServices(await load());
+      setServices(await load(undefined, search, status));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to load services.");
     } finally {
@@ -124,9 +124,17 @@ export function AdminServices() {
         <label className="relative flex-1">
           <span className="sr-only">Search services</span>
           <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search service, category, or vendor..." className="h-12 w-full rounded-xl border border-stone-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100" />
+          <input value={search} onChange={(event) => {
+            setSearch(event.target.value);
+            setLoading(true);
+            setError(null);
+          }} placeholder="Search by service name..." className="h-12 w-full rounded-xl border border-stone-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100" />
         </label>
-        <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-700 outline-none">
+        <select value={status} onChange={(event) => {
+          setStatus(event.target.value);
+          setLoading(true);
+          setError(null);
+        }} className="h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-700 outline-none">
           <option value="all">All statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
@@ -150,9 +158,9 @@ export function AdminServices() {
             </div>
           ))}
         </div>
-      ) : filtered.length ? (
+      ) : services?.length ? (
         <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filtered.map((service) => (
+          {services.map((service) => (
             <article key={service.id} className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
               <div className="relative h-44 bg-stone-100">
                 {service.images[0] ? (

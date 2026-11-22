@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   adminApiFetch,
+  formatCurrencyAmount,
   normalizeAdminStats,
   type AdminStats,
 } from "@/lib/admin-api";
@@ -103,12 +104,16 @@ export function AdminOverview() {
         ))}
       </section>
 
-      {stats && stats.totalRevenue > 0 && (
+      {stats && stats.revenueByCurrency.length > 0 && (
         <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-rose-700">Revenue</p>
-          <p className="mt-2 font-serif text-3xl text-stone-900">
-            ${new Intl.NumberFormat("en-US", { minimumFractionDigits: 2 }).format(stats.totalRevenue)}
-          </p>
+          <div className="mt-2 flex flex-wrap gap-6">
+            {stats.revenueByCurrency.map(({ currency, amount }) => (
+              <p key={currency} className="font-serif text-3xl text-stone-900">
+                {formatCurrencyAmount(amount, currency)}
+              </p>
+            ))}
+          </div>
         </section>
       )}
 

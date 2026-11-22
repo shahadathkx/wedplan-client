@@ -43,7 +43,7 @@ export type AdminStats = {
   totalServices: number;
   pendingServices: number;
   totalBookings: number;
-  totalRevenue: number;
+  revenueByCurrency: Array<{ currency: string; amount: number }>;
 };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -263,6 +263,21 @@ export function normalizeAdminStats(payload: unknown): AdminStats {
     }
     return 0;
   };
+  const revenueByCurrency = Array.isArray(stats.revenueByCurrency)
+    ? stats.revenueByCurrency.flatMap((value) => {
+        const record = asRecord(value);
+        const currency = asText(record?.currency).toUpperCase();
+        const amount = record?.amount;
+        if (
+          !currency ||
+          (typeof amount !== "number" && typeof amount !== "string") ||
+          !Number.isFinite(Number(amount))
+        ) {
+          return [];
+        }
+        return [{ currency, amount: Number(amount) }];
+      })
+    : [];
   return {
     totalUsers: numberValue(["totalUsers", "usersCount", "userCount"]),
     totalVendors: numberValue(["totalVendors", "vendorCount", "vendors"]),
@@ -270,8 +285,22 @@ export function normalizeAdminStats(payload: unknown): AdminStats {
     totalServices: numberValue(["totalServices", "serviceCount", "services"]),
     pendingServices: numberValue(["pendingServices", "pendingServiceCount"]),
     totalBookings: numberValue(["totalBookings", "bookingCount", "bookings"]),
-    totalRevenue: numberValue(["totalRevenue", "revenue", "totalAmount"]),
+    revenueByCurrency,
   };
+}
+
+export function formatCurrencyAmount(amountMinorUnits: number, currency: string) {
+  const normalizedCurrency = currency.toUpperCase();
+  try {
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: normalizedCurrency,
+    });
+    const fractionDigits = formatter.resolvedOptions().maximumFractionDigits ?? 2;
+    return formatter.format(amountMinorUnits / 10 ** fractionDigits);
+  } catch {
+    return `${normalizedCurrency} ${(amountMinorUnits / 100).toFixed(2)}`;
+  }
 }
 
 export async function adminApiFetch(path: string, init: RequestInit = {}) {

@@ -12,8 +12,6 @@ import {
 } from "lucide-react";
 import {
   customerApiFetch,
-  fetchCustomerBookings,
-  deriveCustomerStats,
   type CustomerStats,
 } from "@/lib/customer-api";
 
@@ -24,40 +22,30 @@ export function CustomerOverview() {
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      const response = await customerApiFetch("/api/customer/stats", { signal }).catch(
-        () => null,
-      );
-      if (response) {
-        const payload = (await response.json()) as Record<string, unknown>;
-        const nested =
-          (typeof payload.stats === "object" && payload.stats !== null
-            ? (payload.stats as Record<string, unknown>)
-            : null) ??
-          (typeof payload.data === "object" && payload.data !== null
-            ? (payload.data as Record<string, unknown>)
-            : null) ??
-          payload;
-        const numberValue = (keys: string[]) => {
-          for (const key of keys) {
-            const value = nested[key];
-            if (typeof value === "number") {
-              return value;
-            }
-            if (typeof value === "string" && Number.isFinite(Number(value))) {
-              return Number(value);
-            }
-          }
-          return 0;
-        };
-        return {
-          total: numberValue(["total", "totalBookings", "bookingCount"]),
-          pending: numberValue(["pending", "pendingBookings"]),
-          accepted: numberValue(["accepted", "acceptedBookings"]),
-          rejected: numberValue(["rejected", "rejectedBookings"]),
-        } satisfies CustomerStats;
-      } else {
-        return deriveCustomerStats(await fetchCustomerBookings(signal));
+      const response = await customerApiFetch("/api/customer/stats", { signal });
+      const payload = (await response.json()) as {
+        stats?: Partial<Record<
+          "totalBookings" | "pendingBookings" | "acceptedBookings" | "rejectedBookings",
+          number
+        >>;
+      };
+      const stats = payload.stats;
+      if (
+        !stats ||
+        typeof stats.totalBookings !== "number" ||
+        typeof stats.pendingBookings !== "number" ||
+        typeof stats.acceptedBookings !== "number" ||
+        typeof stats.rejectedBookings !== "number"
+      ) {
+        throw new Error("The customer stats API returned an unexpected response.");
       }
+
+      return {
+        total: stats.totalBookings,
+        pending: stats.pendingBookings,
+        accepted: stats.acceptedBookings,
+        rejected: stats.rejectedBookings,
+      } satisfies CustomerStats;
     } catch (cause) {
       if (signal?.aborted) {
         return null;

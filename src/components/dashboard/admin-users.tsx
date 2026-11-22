@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { LoaderCircle, RefreshCw, Search, Shield, X } from "lucide-react";
 import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
 import {
   adminApiFetch,
   normalizeAdminUsers,
@@ -11,6 +12,7 @@ import {
 } from "@/lib/admin-api";
 
 export function AdminUsers() {
+  const { data: session } = authClient.useSession();
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,14 +21,22 @@ export function AdminUsers() {
   const [details, setDetails] = useState<AdminUser | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  const load = useCallback(async (signal?: AbortSignal) => {
-    const response = await adminApiFetch("/api/admin/users", { signal });
+  const load = useCallback(async (
+    signal?: AbortSignal,
+    searchValue = "",
+    roleValue = "all",
+  ) => {
+    const params = new URLSearchParams({ limit: "100" });
+    if (searchValue.trim()) params.set("q", searchValue.trim());
+    if (roleValue !== "all") params.set("role", roleValue);
+    const response = await adminApiFetch(`/api/admin/users?${params}`, { signal });
     return normalizeAdminUsers(await response.json());
   }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    void load(controller.signal)
+    const timeoutId = window.setTimeout(() => {
+      void load(controller.signal, search, role)
       .then((result) => {
         if (!controller.signal.aborted) setUsers(result);
       })
@@ -38,25 +48,18 @@ export function AdminUsers() {
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-    return () => controller.abort();
-  }, [load]);
-
-  const filtered = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    return (users ?? []).filter((user) => {
-      const matchesSearch =
-        !term ||
-        user.name.toLowerCase().includes(term) ||
-        user.email.toLowerCase().includes(term);
-      return matchesSearch && (role === "all" || user.role === role);
-    });
-  }, [users, search, role]);
+    }, 250);
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [load, search, role]);
 
   async function retry() {
     setLoading(true);
     setError(null);
     try {
-      setUsers(await load());
+      setUsers(await load(undefined, search, role));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Unable to load users.");
     } finally {
@@ -95,9 +98,17 @@ export function AdminUsers() {
         <label className="relative flex-1">
           <span className="sr-only">Search users</span>
           <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-stone-400" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name or email..." className="h-12 w-full rounded-xl border border-stone-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100" />
+          <input value={search} onChange={(event) => {
+            setSearch(event.target.value);
+            setLoading(true);
+            setError(null);
+          }} placeholder="Search name or email..." className="h-12 w-full rounded-xl border border-stone-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100" />
         </label>
-        <select value={role} onChange={(event) => setRole(event.target.value)} className="h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-700 outline-none">
+        <select value={role} onChange={(event) => {
+          setRole(event.target.value);
+          setLoading(true);
+          setError(null);
+        }} className="h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-700 outline-none">
           <option value="all">All roles</option>
           <option value="customer">Customers</option>
           <option value="vendor">Vendors</option>
@@ -116,14 +127,14 @@ export function AdminUsers() {
         <div className="mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white">
           {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-20 border-b border-stone-100 last:border-0 animate-pulse bg-stone-50/40" />)}
         </div>
-      ) : filtered.length ? (
+      ) : users?.length ? (
         <div className="mt-6 overflow-x-auto rounded-3xl border border-stone-200 bg-white">
           <table className="w-full min-w-[700px] text-left text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
               <tr><th className="px-5 py-4">User</th><th className="px-5 py-4">Role</th><th className="px-5 py-4">Status</th><th className="px-5 py-4 text-right">Actions</th></tr>
             </thead>
             <tbody>
-              {filtered.map((user) => (
+              {users.map((user) => (
                 <tr key={user.id} className="border-b border-stone-100 last:border-0">
                   <td className="px-5 py-4">
                     <button type="button" onClick={() => setDetails(user)} className="flex items-center gap-3 text-left">
@@ -136,9 +147,9 @@ export function AdminUsers() {
                   <td className="px-5 py-4 capitalize text-stone-600">{user.role}</td>
                   <td className="px-5 py-4"><span className={`rounded-full px-3 py-1 text-xs font-bold ${user.isBlocked ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}`}>{user.isBlocked ? "Blocked" : "Active"}</span></td>
                   <td className="px-5 py-4 text-right">
-                    <button type="button" disabled={busyId === user.id} onClick={() => void toggleBlock(user)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-stone-200 px-3 font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-60">
+                    <button type="button" disabled={busyId === user.id || (user.id === session?.user.id && !user.isBlocked)} onClick={() => void toggleBlock(user)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-stone-200 px-3 font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-60">
                       {busyId === user.id ? <LoaderCircle className="size-4 animate-spin" /> : <Shield className="size-4" />}
-                      {user.isBlocked ? "Unblock" : "Block"}
+                      {user.isBlocked ? "Unblock" : user.id === session?.user.id ? "You" : "Block"}
                     </button>
                   </td>
                 </tr>

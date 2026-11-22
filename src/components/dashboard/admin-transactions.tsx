@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
 import {
   adminApiFetch,
+  formatCurrencyAmount,
   normalizeAdminTransactions,
   type AdminTransaction,
 } from "@/lib/admin-api";
@@ -16,14 +17,7 @@ function formatDate(value: string) {
 }
 
 function formatAmount(transaction: AdminTransaction) {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: transaction.currency,
-    }).format(transaction.amount);
-  } catch {
-    return `${transaction.currency} ${transaction.amount.toFixed(2)}`;
-  }
+  return formatCurrencyAmount(transaction.amount, transaction.currency);
 }
 
 export function AdminTransactions() {
@@ -32,7 +26,7 @@ export function AdminTransactions() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    const response = await adminApiFetch("/api/admin/transactions", { signal });
+    const response = await adminApiFetch("/api/admin/transactions?limit=100", { signal });
     return normalizeAdminTransactions(await response.json());
   }, []);
 
