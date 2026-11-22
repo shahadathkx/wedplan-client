@@ -26,7 +26,10 @@ export async function proxy(request: NextRequest) {
       pathname,
       error,
     });
-    return NextResponse.next();
+    return NextResponse.json(
+      { message: "Unable to verify your session. Please try again." },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
   }
 
   if (!session || session.user.isBlocked) {
