@@ -212,6 +212,20 @@ Set these in the **client** Vercel project:
 There are no shared/default dashboard credentials. Use only accounts you created
 or that the server operator provisioned for you.
 
+### Vendor dashboard environment
+
+The client Vercel project must have these values for vendor authentication and
+dashboard API requests:
+
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL=https://wedplan-client-eight.vercel.app`
+- `MONGODB_URI`
+- `NEXT_PUBLIC_API_URL=https://wedplan-server-skhe.vercel.app`
+
+`MONGODB_DB` is optional (defaults to `wedplan`). `GOOGLE_CLIENT_ID` and
+`GOOGLE_CLIENT_SECRET` are needed only for Google sign-in. `IMGBB_API_KEY` is
+needed for image uploads when adding services.
+
 ## Authentication and Payments
 
 The signup role is restricted to `customer` or `vendor`. Subscription plan,

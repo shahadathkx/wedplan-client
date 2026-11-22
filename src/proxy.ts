@@ -18,7 +18,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await auth.api.getSession({ headers: request.headers });
+  let session: Awaited<ReturnType<typeof auth.api.getSession>>;
+  try {
+    session = await auth.api.getSession({ headers: request.headers });
+  } catch (error) {
+    console.error("[auth] Session lookup failed in route proxy", {
+      pathname,
+      error,
+    });
+    return NextResponse.next();
+  }
+
   if (!session || session.user.isBlocked) {
     const signInUrl = new URL("/sign-in", request.url);
     signInUrl.searchParams.set("callbackURL", pathname);

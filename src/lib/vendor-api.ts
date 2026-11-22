@@ -1,4 +1,4 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, resolveApiUrl } from "@/lib/api";
 import { normalizeServiceList, type WeddingService } from "@/lib/services";
 
 export type VendorStats = {
@@ -166,18 +166,46 @@ export async function vendorApiFetch(
   path: string,
   init: RequestInit = {},
 ) {
+  let requestUrl: URL;
+  try {
+    requestUrl = resolveApiUrl(path);
+  } catch (error) {
+    console.error("[vendor-api] API URL is not configured", {
+      path,
+      envVar: "NEXT_PUBLIC_API_URL",
+      error,
+    });
+    throw error;
+  }
+
   let response: Response;
   try {
     response = await apiFetch(path, init);
   } catch (error) {
+    if (
+      init.signal?.aborted ||
+      (error instanceof DOMException && error.name === "AbortError")
+    ) {
+      throw error;
+    }
     if (error instanceof TypeError) {
+      console.error("[vendor-api] Request failed", {
+        url: requestUrl.href,
+        error,
+      });
       throw new Error("Could not connect to the WedPlan API. Please try again.");
     }
     throw error;
   }
 
   if (!response.ok) {
-    throw await responseError(response);
+    const error = await responseError(response);
+    console.error("[vendor-api] Request failed", {
+      url: response.url || requestUrl.href,
+      status: response.status,
+      error,
+    });
+    throw error;
   }
   return response;
 }
