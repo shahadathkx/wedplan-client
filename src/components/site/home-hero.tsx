@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ArrowDown, ArrowRight, Check, Sparkles } from "lucide-react";
@@ -40,8 +41,8 @@ export function HomeHero() {
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button size="lg" className="h-14" asChild>
-              <Link href="/sign-up">
-                Start planning
+              <Link href="/services">
+                Explore Wedding Services
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
@@ -73,14 +74,15 @@ export function HomeHero() {
           className="relative mx-auto w-full max-w-[520px]"
         >
           <div className="relative aspect-[4/4.5] overflow-hidden rounded-[48%_48%_24px_24px] bg-[#ead5cb]">
-            {/* Decorative art keeps the first render independent of remote image providers. */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_55%_25%,#fff5ed_0%,#e9cfc5_42%,#c89d8c_100%)]" />
-            <div className="absolute left-[13%] top-[15%] h-[55%] w-[75%] rounded-[50%] border border-white/60 bg-white/20 blur-[1px]" />
-            <div className="absolute bottom-0 left-0 right-0 h-[48%] bg-[linear-gradient(0deg,#825f55_0%,#a98174_45%,transparent_100%)]" />
-            <div className="absolute bottom-[18%] left-[12%] h-[42%] w-[76%] rounded-t-[55%] bg-[linear-gradient(130deg,#fff9f1,#e8d0c1_44%,#b17f72)] shadow-2xl shadow-stone-900/15" />
-            <div className="absolute bottom-[20%] left-[47%] h-[45%] w-[26%] rounded-t-full bg-[linear-gradient(100deg,#eed9cf,#fffaf3_55%,#cfa89a)]" />
-            <div className="absolute left-[15%] top-[22%] size-16 rounded-full bg-[#66836a]/70 blur-lg" />
-            <div className="absolute right-[16%] top-[13%] size-24 rounded-full bg-[#fff4e8]/80 blur-2xl" />
+            <Image
+              src="/wedding-hero.svg"
+              alt="Illustration of a couple beneath a flower-covered wedding arch"
+              fill
+              priority
+              sizes="(max-width: 768px) 90vw, 40vw"
+              unoptimized
+              className="object-cover"
+            />
           </div>
           <div className="absolute -left-2 top-[18%] rounded-2xl border border-white/80 bg-white/90 p-4 shadow-xl shadow-stone-900/10 backdrop-blur sm:-left-12">
             <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-stone-400">

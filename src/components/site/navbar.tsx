@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 
 const publicLinks = [
-  { label: "Why WedPlan", href: "/#how-it-works" },
+  { label: "Why WedPlan", href: "/#why-wedplan" },
   { label: "How it works", href: "/#how-it-works" },
 ];
 
