@@ -336,5 +336,10 @@ async function adminResponseError(response: Response) {
   } catch {
     message = `Request failed (${response.status}).`;
   }
+  if (response.status === 401) {
+    message = `Your admin session has expired or is invalid. ${message}`;
+  } else if (response.status === 403) {
+    message = `Admin access is required for this action. ${message}`;
+  }
   return new Error(message);
 }

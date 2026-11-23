@@ -89,7 +89,7 @@ export function AdminTransactions() {
         <div className="mt-8 space-y-3" aria-label="Loading transactions">
           {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-16 animate-pulse rounded-2xl bg-white" />)}
         </div>
-      ) : transactions?.length ? (
+      ) : error ? null : transactions?.length ? (
         <div className="mt-8 overflow-x-auto rounded-3xl border border-stone-200 bg-white">
           <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">

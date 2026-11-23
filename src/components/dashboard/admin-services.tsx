@@ -9,6 +9,7 @@ import {
   normalizeAdminServices,
   type AdminService,
 } from "@/lib/admin-api";
+import { weddingCategories } from "@/lib/categories";
 
 function statusStyle(status: AdminService["status"]) {
   if (status === "approved") return "bg-emerald-50 text-emerald-800";
@@ -22,6 +23,7 @@ export function AdminServices() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const [category, setCategory] = useState("all");
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async (
@@ -35,6 +37,10 @@ export function AdminServices() {
     const response = await adminApiFetch(`/api/admin/services?${params}`, { signal });
     return normalizeAdminServices(await response.json());
   }, []);
+  const visibleServices =
+    services?.filter(
+      (service) => category === "all" || service.category === category,
+    ) ?? null;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -162,6 +168,19 @@ export function AdminServices() {
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          aria-label="Filter services by category"
+          className="h-12 rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-700 outline-none"
+        >
+          <option value="all">All categories</option>
+          {weddingCategories.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && (
@@ -180,9 +199,9 @@ export function AdminServices() {
             </div>
           ))}
         </div>
-      ) : services?.length ? (
+      ) : error ? null : visibleServices?.length ? (
         <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {services.map((service) => (
+          {visibleServices.map((service) => (
             <article key={service.id} className="overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-sm">
               <div className="relative h-44 bg-stone-100">
                 {service.images[0] ? (

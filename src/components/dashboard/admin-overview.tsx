@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
   CreditCard,
-  LoaderCircle,
   RefreshCw,
   ShieldCheck,
   Users,
@@ -72,12 +71,12 @@ export function AdminOverview() {
   }
 
   const cards = [
-    { label: "Total users", value: stats?.totalUsers, icon: Users },
-    { label: "Vendors", value: stats?.totalVendors, icon: ShieldCheck },
-    { label: "Customers", value: stats?.totalCustomers, icon: Users },
-    { label: "Total services", value: stats?.totalServices, icon: BriefcaseBusiness },
-    { label: "Pending services", value: stats?.pendingServices, icon: RefreshCw },
-    { label: "Transactions", value: stats?.totalTransactions, icon: CreditCard },
+    { label: "Total Registered Users", value: stats?.totalUsers, icon: Users },
+    { label: "Total Vendors", value: stats?.totalVendors, icon: ShieldCheck },
+    { label: "Total Customers", value: stats?.totalCustomers, icon: Users },
+    { label: "Total Services", value: stats?.totalServices, icon: BriefcaseBusiness },
+    { label: "Pending Services", value: stats?.pendingServices, icon: RefreshCw },
+    { label: "Total Transactions", value: stats?.totalTransactions, icon: CreditCard },
   ];
 
   return (
@@ -106,7 +105,10 @@ export function AdminOverview() {
             <p className="mt-5 text-sm font-medium text-stone-500">{label}</p>
             <div className="mt-1 min-h-10">
               {loading ? (
-                <LoaderCircle className="size-5 animate-spin text-stone-300" aria-label="Loading" />
+                <span
+                  aria-label={`Loading ${label}`}
+                  className="block h-8 w-20 animate-pulse rounded-lg bg-stone-100"
+                />
               ) : (
                 <p className="font-serif text-3xl text-stone-900">{value ?? "—"}</p>
               )}

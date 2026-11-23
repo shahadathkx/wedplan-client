@@ -74,11 +74,8 @@ export function AdminUsers() {
   }
 
   async function toggleBlock(user: AdminUser) {
-    if (
-      user.id === session?.user.id &&
-      !user.isBlocked
-    ) {
-      toast.error("You cannot block your own admin account.");
+    if (user.role === "admin" || user.id === session?.user.id) {
+      toast.error("Admin accounts cannot be blocked or unblocked here.");
       return;
     }
     if (
@@ -155,11 +152,11 @@ export function AdminUsers() {
         <div className="mt-6 overflow-hidden rounded-3xl border border-stone-200 bg-white">
           {Array.from({ length: 5 }, (_, index) => <div key={index} className="h-20 border-b border-stone-100 last:border-0 animate-pulse bg-stone-50/40" />)}
         </div>
-      ) : users?.length ? (
+      ) : error ? null : users?.length ? (
         <div className="mt-6 overflow-x-auto rounded-3xl border border-stone-200 bg-white">
-          <table className="w-full min-w-[700px] text-left text-sm">
+          <table className="w-full min-w-[850px] text-left text-sm">
             <thead className="border-b border-stone-100 bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
-              <tr><th className="px-5 py-4">User</th><th className="px-5 py-4">Role</th><th className="px-5 py-4">Status</th><th className="px-5 py-4 text-right">Actions</th></tr>
+              <tr><th className="px-5 py-4">User</th><th className="px-5 py-4">Role</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Joined</th><th className="px-5 py-4 text-right">Actions</th></tr>
             </thead>
             <tbody>
               {users.map((user) => (
@@ -174,10 +171,11 @@ export function AdminUsers() {
                   </td>
                   <td className="px-5 py-4 capitalize text-stone-600">{user.role}</td>
                   <td className="px-5 py-4"><span className={`rounded-full px-3 py-1 text-xs font-bold ${user.isBlocked ? "bg-red-50 text-red-800" : "bg-emerald-50 text-emerald-800"}`}>{user.isBlocked ? "Blocked" : "Active"}</span></td>
+                  <td className="whitespace-nowrap px-5 py-4 text-stone-600">{user.createdAt ? formatDate(user.createdAt) : "—"}</td>
                   <td className="px-5 py-4 text-right">
-                    <button type="button" disabled={busyId === user.id || (user.id === session?.user.id && !user.isBlocked)} onClick={() => void toggleBlock(user)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-stone-200 px-3 font-semibold text-stone-700 hover:bg-stone-50 disabled:opacity-60">
+                    <button type="button" disabled={busyId === user.id || user.role === "admin" || user.id === session?.user.id} onClick={() => void toggleBlock(user)} className="inline-flex min-h-9 items-center gap-2 rounded-full border border-stone-200 px-3 font-semibold text-stone-700 hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-60">
                       {busyId === user.id ? <LoaderCircle className="size-4 animate-spin" /> : <Shield className="size-4" />}
-                      {user.isBlocked ? "Unblock" : user.id === session?.user.id ? "You" : "Block"}
+                      {user.role === "admin" ? "Admin" : user.isBlocked ? "Unblock" : "Block"}
                     </button>
                   </td>
                 </tr>
@@ -209,13 +207,18 @@ export function AdminUsers() {
               type="button"
               disabled={
                 busyId === details.id ||
-                (details.id === session?.user.id && !details.isBlocked)
+                details.role === "admin" ||
+                details.id === session?.user.id
               }
               onClick={() => void toggleBlock(details)}
               className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-5 text-sm font-semibold text-white disabled:opacity-60"
             >
               {busyId === details.id ? <LoaderCircle className="size-4 animate-spin" /> : <Shield className="size-4" />}
-              {details.isBlocked ? "Unblock user" : "Block user"}
+              {details.role === "admin"
+                ? "Admin accounts are protected"
+                : details.isBlocked
+                  ? "Unblock user"
+                  : "Block user"}
             </button>
           </section>
         </div>
