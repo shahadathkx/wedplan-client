@@ -5,6 +5,7 @@ export type VendorSummary = {
   name: string;
   businessName: string;
   image: string | null;
+  subscriptionPlan: string;
 };
 
 export type WeddingService = {
@@ -59,6 +60,7 @@ function getVendor(value: Record<string, unknown>): VendorSummary | null {
       name: name || "Wedding professional",
       businessName,
       image: asText(value.vendorImage) || null,
+      subscriptionPlan: asText(value.subscriptionPlan, "free"),
     };
   }
 
@@ -68,6 +70,7 @@ function getVendor(value: Record<string, unknown>): VendorSummary | null {
     name: asText(vendor.name, "Wedding professional"),
     businessName: asText(vendor.businessName),
     image: asText(vendor.image) || null,
+    subscriptionPlan: asText(vendor.subscriptionPlan, "free"),
   };
 }
 

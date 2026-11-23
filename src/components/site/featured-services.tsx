@@ -83,7 +83,11 @@ export function FeaturedServices() {
             className="mt-9 flex flex-col items-center rounded-3xl border border-rose-200 bg-rose-50 px-6 py-10 text-center"
           >
             <p className="font-semibold text-stone-800">Featured services are unavailable</p>
-            <p className="mt-2 max-w-lg text-sm text-stone-600">{error}</p>
+            <p className="mt-2 max-w-lg text-sm text-stone-600">
+              {process.env.NODE_ENV === "development"
+                ? error
+                : "Please try again in a moment."}
+            </p>
             <Button
               variant="outline"
               className="mt-5"
@@ -104,23 +108,30 @@ export function FeaturedServices() {
             ))}
           </div>
         ) : services.length ? (
-          <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {services.slice(0, featuredCount).map((service, index) => (
-              <motion.div
-                key={service.id}
-                initial={{ opacity: 0, y: 18 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.1 }}
-                transition={{ duration: 0.45, delay: Math.min(index * 0.07, 0.28) }}
-              >
-                <ServiceCard
-                  service={service}
-                  isAuthenticated={Boolean(session)}
-                  index={index}
-                />
-              </motion.div>
-            ))}
-          </div>
+          <>
+            <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {services.slice(0, featuredCount).map((service, index) => (
+                <motion.div
+                  key={service.id}
+                  initial={{ opacity: 0, y: 18 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.1 }}
+                  transition={{ duration: 0.45, delay: Math.min(index * 0.07, 0.28) }}
+                >
+                  <ServiceCard
+                    service={service}
+                    isAuthenticated={Boolean(session)}
+                    index={index}
+                  />
+                </motion.div>
+              ))}
+            </div>
+            <div className="mt-9 text-center">
+              <Button asChild variant="outline">
+                <Link href="/services">Browse all services</Link>
+              </Button>
+            </div>
+          </>
         ) : (
           <div className="mt-9 rounded-3xl border border-dashed border-stone-300 bg-[#fffdfa] px-6 py-12 text-center">
             <Heart className="mx-auto size-7 text-rose-700" />
@@ -130,6 +141,9 @@ export function FeaturedServices() {
             <p className="mt-2 text-sm text-stone-500">
               Check back soon to meet our wedding professionals.
             </p>
+            <Button asChild variant="outline" className="mt-5">
+              <Link href="/services">Browse Services</Link>
+            </Button>
           </div>
         )}
       </div>

@@ -1,6 +1,32 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchServiceList } from "./services";
+import { fetchServiceList, normalizeServiceList } from "./services";
+
+test("featured service normalization preserves vendor profile and plan fields", () => {
+  const [service] = normalizeServiceList([
+    {
+      _id: "service-1",
+      vendorId: "vendor-1",
+      serviceName: "Wedding photography",
+      price: 1200,
+      vendor: {
+        id: "vendor-1",
+        name: "Avery Smith",
+        businessName: "Avery Studio",
+        image: "https://lh3.googleusercontent.com/avatar",
+        subscriptionPlan: "premium",
+      },
+    },
+  ]);
+
+  assert.deepEqual(service.vendor, {
+    id: "vendor-1",
+    name: "Avery Smith",
+    businessName: "Avery Studio",
+    image: "https://lh3.googleusercontent.com/avatar",
+    subscriptionPlan: "premium",
+  });
+});
 
 test("service list fetch uses NEXT_PUBLIC_API_URL and treats an empty result as success", async () => {
   const previousApiUrl = process.env.NEXT_PUBLIC_API_URL;
