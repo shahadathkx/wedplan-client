@@ -1,8 +1,30 @@
 const authTokenPath = "/api/auth/token";
+const sessionExpiredMessage = "Session expired, please sign in again";
 
 type ApiRequestInit = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;
 };
+
+export class SessionExpiredError extends Error {
+  constructor() {
+    super(sessionExpiredMessage);
+    this.name = "SessionExpiredError";
+  }
+}
+
+function isBookingSubmission(path: string, method: string): boolean {
+  return path === "/api/bookings" && method.toUpperCase() === "POST";
+}
+
+function logBookingRequest(url: string, method: string, status: number | null): void {
+  console.info("[booking-request]", { method, url, status });
+}
+
+function resolveBrowserUrl(path: string): string {
+  return typeof window === "undefined"
+    ? path
+    : new URL(path, window.location.origin).href;
+}
 
 export class ApiRequestError extends Error {
   readonly url: string;
@@ -77,6 +99,9 @@ export async function publicApiFetch(
 }
 
 export async function apiFetch(path: string, init: ApiRequestInit = {}) {
+  const method = init.method ?? "GET";
+  const isBooking = isBookingSubmission(path, method);
+  const tokenUrl = resolveBrowserUrl(authTokenPath);
   let tokenResponse: Response;
   try {
     tokenResponse = await fetch(authTokenPath, {
@@ -85,6 +110,9 @@ export async function apiFetch(path: string, init: ApiRequestInit = {}) {
       signal: init.signal,
     });
   } catch (error) {
+    if (isBooking) {
+      logBookingRequest(tokenUrl, "GET", null);
+    }
     if (
       init.signal?.aborted ||
       (error instanceof DOMException && error.name === "AbortError")
@@ -95,33 +123,37 @@ export async function apiFetch(path: string, init: ApiRequestInit = {}) {
       url: authTokenPath,
       error,
     });
-    throw new ApiRequestError(authTokenPath, error);
+    throw new SessionExpiredError();
   }
 
   if (!tokenResponse.ok) {
-    const error = new ApiRequestError(
-      authTokenPath,
-      new Error("Unable to retrieve an authentication token."),
-      tokenResponse.status,
-    );
+    if (isBooking) {
+      logBookingRequest(tokenResponse.url || tokenUrl, "GET", tokenResponse.status);
+    }
     console.error("[api] Authentication token request failed", {
       url: authTokenPath,
       status: tokenResponse.status,
-      error,
     });
-    throw error;
+    throw new SessionExpiredError();
   }
 
   let payload: unknown;
   try {
     payload = await tokenResponse.json();
   } catch (error) {
+    if (isBooking) {
+      logBookingRequest(tokenResponse.url || tokenUrl, "GET", tokenResponse.status);
+    }
     console.error("[api] Authentication token response was invalid", {
       url: authTokenPath,
       status: tokenResponse.status,
       error,
     });
-    throw new ApiRequestError(authTokenPath, error, tokenResponse.status);
+    throw new SessionExpiredError();
+  }
+
+  if (isBooking) {
+    logBookingRequest(tokenResponse.url || tokenUrl, "GET", tokenResponse.status);
   }
 
   const token =
@@ -129,14 +161,35 @@ export async function apiFetch(path: string, init: ApiRequestInit = {}) {
       ? (payload as { token?: unknown }).token
       : undefined;
   if (typeof token !== "string" || !token) {
-    throw new Error("Your session has expired. Please sign in again.");
+    throw new SessionExpiredError();
   }
 
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
 
-  return publicApiFetch(path, {
-    ...init,
-    headers,
-  });
+  let apiUrl: string;
+  try {
+    apiUrl = resolveApiUrl(path).href;
+  } catch (error) {
+    if (isBooking) {
+      logBookingRequest(path, method.toUpperCase(), null);
+    }
+    throw error;
+  }
+
+  try {
+    const response = await publicApiFetch(path, {
+      ...init,
+      headers,
+    });
+    if (isBooking) {
+      logBookingRequest(response.url || apiUrl, method.toUpperCase(), response.status);
+    }
+    return response;
+  } catch (error) {
+    if (isBooking) {
+      logBookingRequest(apiUrl, method.toUpperCase(), null);
+    }
+    throw error;
+  }
 }

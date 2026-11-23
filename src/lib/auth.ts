@@ -23,6 +23,9 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 const database = mongoClient.db(process.env.MONGODB_DB || "wedplan");
+console.info("[auth] MongoDB database configured", {
+  databaseName: database.databaseName,
+});
 
 export const auth = betterAuth({
   appName: "WedPlan",

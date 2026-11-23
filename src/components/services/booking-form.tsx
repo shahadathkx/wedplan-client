@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { apiFetch } from "@/lib/api";
+import { apiFetch, SessionExpiredError } from "@/lib/api";
 
 type BookingFormProps = {
   serviceId: string;
@@ -19,6 +20,7 @@ export function BookingForm({
   userId,
   role,
 }: BookingFormProps) {
+  const router = useRouter();
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [message, setMessage] = useState("");
@@ -73,6 +75,12 @@ export function BookingForm({
       setEventLocation("");
       setMessage("");
     } catch (error) {
+      if (error instanceof SessionExpiredError) {
+        toast.error(error.message);
+        const callbackURL = `${window.location.pathname}${window.location.search}`;
+        router.replace(`/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`);
+        return;
+      }
       toast.error(
         error instanceof Error
           ? error.message
