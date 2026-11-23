@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { LoaderCircle } from "lucide-react";
+import { useRef, useState, type FormEvent } from "react";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
@@ -9,13 +9,16 @@ import { authClient } from "@/lib/auth-client";
 
 export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }) {
   const { data: session, isPending } = authClient.useSession();
+  const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSaving(true);
+    setSaveError("");
     try {
       const response = await apiFetch("/api/me", {
         method: "PATCH",
@@ -31,7 +34,10 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
       }
       toast.success("Your profile has been updated.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Profile update failed.");
+      const message =
+        error instanceof Error ? error.message : "Profile update failed.";
+      setSaveError(message);
+      toast.error(message);
     } finally {
       setIsSaving(false);
     }
@@ -57,11 +63,45 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
             <div className="h-12 animate-pulse rounded-xl bg-stone-100" />
           </div>
         ) : !session ? (
-          <p role="alert" className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
-            Your account details could not be loaded. Please sign in again and retry.
-          </p>
+          <div
+            role="alert"
+            className="mt-8 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+          >
+            <p>
+              Your account details could not be loaded. Please sign in again
+              and retry.
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-3 inline-flex items-center gap-2 font-semibold"
+            >
+              <RefreshCw className="size-4" />
+              Try again
+            </button>
+          </div>
         ) : (
-          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          <form
+            ref={formRef}
+            onSubmit={handleSubmit}
+            className="mt-8 space-y-5"
+          >
+            {saveError && (
+              <div
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+              >
+                <p>{saveError}</p>
+                <button
+                  type="button"
+                  onClick={() => formRef.current?.requestSubmit()}
+                  className="mt-3 inline-flex items-center gap-2 font-semibold"
+                >
+                  <RefreshCw className="size-4" />
+                  Try again
+                </button>
+              </div>
+            )}
             <label className="block text-sm font-semibold text-stone-700">
               Full name
               <input

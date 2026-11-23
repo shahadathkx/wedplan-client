@@ -6,6 +6,14 @@ import { dashboardPath } from "@/lib/roles";
 
 export type DashboardRole = "customer" | "vendor" | "admin";
 
+type DashboardUser = NonNullable<
+  Awaited<ReturnType<typeof auth.api.getSession>>
+>["user"];
+
+export type DashboardAuthResult =
+  | { status: "ready"; user: DashboardUser }
+  | { status: "error"; message: string };
+
 export async function requireDashboardUser(role: DashboardRole) {
   await connection();
 
@@ -13,8 +21,17 @@ export async function requireDashboardUser(role: DashboardRole) {
   try {
     session = await auth.api.getSession({ headers: await headers() });
   } catch (error) {
-    console.error(`[auth] Unable to load session for ${role} dashboard`, error);
-    throw new Error("We couldn't verify your sign-in. Please try again.");
+    console.error(`[auth] Unable to load session for ${role} dashboard`, {
+      role,
+      error,
+    });
+    return {
+      status: "error",
+      message:
+        process.env.NODE_ENV === "development" && error instanceof Error
+          ? error.message
+          : "We couldn't verify your sign-in. Please try again.",
+    } satisfies DashboardAuthResult;
   }
 
   if (!session) {
@@ -26,5 +43,5 @@ export async function requireDashboardUser(role: DashboardRole) {
   if (session.user.role !== role) {
     redirect(dashboardPath(session.user.role));
   }
-  return session.user;
+  return { status: "ready", user: session.user } satisfies DashboardAuthResult;
 }

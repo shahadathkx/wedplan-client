@@ -77,16 +77,58 @@ export async function publicApiFetch(
 }
 
 export async function apiFetch(path: string, init: ApiRequestInit = {}) {
-  const tokenResponse = await fetch(authTokenPath, {
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!tokenResponse.ok) {
-    throw new Error("Unable to retrieve an authentication token.");
+  let tokenResponse: Response;
+  try {
+    tokenResponse = await fetch(authTokenPath, {
+      credentials: "include",
+      cache: "no-store",
+      signal: init.signal,
+    });
+  } catch (error) {
+    if (
+      init.signal?.aborted ||
+      (error instanceof DOMException && error.name === "AbortError")
+    ) {
+      throw error;
+    }
+    console.error("[api] Authentication token request failed", {
+      url: authTokenPath,
+      error,
+    });
+    throw new ApiRequestError(authTokenPath, error);
   }
 
-  const { token } = (await tokenResponse.json()) as { token?: string };
-  if (!token) {
+  if (!tokenResponse.ok) {
+    const error = new ApiRequestError(
+      authTokenPath,
+      new Error("Unable to retrieve an authentication token."),
+      tokenResponse.status,
+    );
+    console.error("[api] Authentication token request failed", {
+      url: authTokenPath,
+      status: tokenResponse.status,
+      error,
+    });
+    throw error;
+  }
+
+  let payload: unknown;
+  try {
+    payload = await tokenResponse.json();
+  } catch (error) {
+    console.error("[api] Authentication token response was invalid", {
+      url: authTokenPath,
+      status: tokenResponse.status,
+      error,
+    });
+    throw new ApiRequestError(authTokenPath, error, tokenResponse.status);
+  }
+
+  const token =
+    typeof payload === "object" && payload !== null && !Array.isArray(payload)
+      ? (payload as { token?: unknown }).token
+      : undefined;
+  if (typeof token !== "string" || !token) {
     throw new Error("Your session has expired. Please sign in again.");
   }
 

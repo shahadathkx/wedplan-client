@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { LoaderCircle, UploadCloud } from "lucide-react";
+import { LoaderCircle, RefreshCw, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { weddingCategories } from "@/lib/categories";
 import { vendorApiFetch } from "@/lib/vendor-api";
@@ -11,11 +11,35 @@ import { vendorApiFetch } from "@/lib/vendor-api";
 async function uploadImage(file: File) {
   const formData = new FormData();
   formData.set("image", file);
-  const response = await fetch("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
-  const result = (await response.json()) as { url?: unknown; message?: unknown };
+  let response: Response;
+  try {
+    response = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    console.error("[upload] Image upload request failed", {
+      url: "/api/upload",
+      error,
+    });
+    throw error;
+  }
+  let result: { url?: unknown; message?: unknown };
+  try {
+    result = (await response.json()) as {
+      url?: unknown;
+      message?: unknown;
+    };
+  } catch (error) {
+    console.error("[upload] Image upload response was invalid", {
+      url: "/api/upload",
+      status: response.status,
+      error,
+    });
+    throw new Error(
+      `Image upload returned an invalid response (${response.status}).`,
+    );
+  }
   if (!response.ok || typeof result.url !== "string") {
     throw new Error(
       typeof result.message === "string"
@@ -28,6 +52,7 @@ async function uploadImage(file: File) {
 
 export function AddVendorServiceForm() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
   const [serviceName, setServiceName] = useState("");
   const [category, setCategory] = useState<string>(weddingCategories[0]);
   const [description, setDescription] = useState("");
@@ -36,6 +61,7 @@ export function AddVendorServiceForm() {
   const [images, setImages] = useState<File[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [limitError, setLimitError] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   function chooseImages(files: FileList | null) {
     const selected = Array.from(files ?? []);
@@ -59,6 +85,7 @@ export function AddVendorServiceForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLimitError(false);
+    setSubmitError("");
     const numericPrice = Number(price);
     if (!Number.isFinite(numericPrice) || numericPrice < 0) {
       toast.error("Enter a valid service price.");
@@ -91,6 +118,7 @@ export function AddVendorServiceForm() {
       const message =
         error instanceof Error ? error.message : "Could not create your service.";
       setLimitError(/free|limit|three|3 available/i.test(message));
+      setSubmitError(message);
       toast.error(message);
     } finally {
       setIsSaving(false);
@@ -110,6 +138,7 @@ export function AddVendorServiceForm() {
       </p>
 
       <form
+        ref={formRef}
         onSubmit={handleSubmit}
         className="mt-8 max-w-3xl space-y-6 rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-8"
       >
@@ -122,6 +151,22 @@ export function AddVendorServiceForm() {
             >
               Compare plans
             </Link>
+          </div>
+        )}
+        {submitError && !limitError && (
+          <div
+            role="alert"
+            className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900"
+          >
+            <p>{submitError}</p>
+            <button
+              type="button"
+              onClick={() => formRef.current?.requestSubmit()}
+              className="mt-3 inline-flex items-center gap-2 font-semibold"
+            >
+              <RefreshCw className="size-4" />
+              Try again
+            </button>
           </div>
         )}
 

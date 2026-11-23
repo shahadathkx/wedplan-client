@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Crown, LoaderCircle, Sparkles } from "lucide-react";
+import { Check, Crown, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { vendorApiFetch } from "@/lib/vendor-api";
@@ -39,6 +39,7 @@ function getCheckoutUrl(value: CheckoutResponse) {
 export function VendorSubscription() {
   const { data: session, isPending } = authClient.useSession();
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);
+  const [checkoutError, setCheckoutError] = useState("");
   const isPremium = session?.user.subscriptionPlan === "premium";
   const expiresAt = session?.user.subscriptionExpiresAt
     ? new Date(session.user.subscriptionExpiresAt)
@@ -46,6 +47,7 @@ export function VendorSubscription() {
 
   async function startCheckout() {
     setIsStartingCheckout(true);
+    setCheckoutError("");
     try {
       const response = await vendorApiFetch("/api/payments/checkout", {
         method: "POST",
@@ -53,8 +55,11 @@ export function VendorSubscription() {
       const result = (await response.json()) as CheckoutResponse;
       window.location.assign(getCheckoutUrl(result));
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Could not start checkout.";
+      setCheckoutError(message);
       toast.error(
-        error instanceof Error ? error.message : "Could not start checkout.",
+        message,
       );
       setIsStartingCheckout(false);
     }
@@ -71,6 +76,41 @@ export function VendorSubscription() {
       <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
         Choose the listing plan that fits the way you want to grow.
       </p>
+
+      {checkoutError && (
+        <div
+          role="alert"
+          className="mt-6 flex flex-col gap-3 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-900 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p>{checkoutError}</p>
+          <button
+            type="button"
+            onClick={() => void startCheckout()}
+            disabled={isStartingCheckout}
+            className="inline-flex shrink-0 items-center gap-2 font-semibold disabled:opacity-60"
+          >
+            <RefreshCw className="size-4" />
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!isPending && !session && (
+        <div
+          role="alert"
+          className="mt-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-900"
+        >
+          Your session could not be loaded. Refresh and sign in again.
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="ml-2 inline-flex items-center gap-2 font-semibold underline"
+          >
+            <RefreshCw className="size-4" />
+            Retry
+          </button>
+        </div>
+      )}
 
       <div className="mt-8 rounded-2xl border border-stone-200 bg-white p-5 sm:flex sm:items-center sm:justify-between sm:px-7">
         <div>

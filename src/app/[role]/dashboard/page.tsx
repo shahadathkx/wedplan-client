@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { DashboardAuthError } from "@/components/dashboard/dashboard-auth-error";
 import { requireDashboardUser } from "@/lib/dashboard-auth";
 
 export const instant = false;
@@ -29,10 +30,13 @@ export default async function RoleDashboard({ params }: RoleDashboardProps) {
     notFound();
   }
 
-  const user = await requireDashboardUser(role);
+  const result = await requireDashboardUser(role);
+  if (result.status === "error") {
+    return <DashboardAuthError message={result.message} />;
+  }
 
   return (
-    <DashboardShell role={role} userName={user.name}>
+    <DashboardShell role={role} userName={result.user.name}>
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.2em] text-rose-700">
           {role} dashboard
@@ -41,7 +45,7 @@ export default async function RoleDashboard({ params }: RoleDashboardProps) {
           {roleTitles[role]}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-7 text-stone-600">
-          Welcome back, {user.name}. Your WedPlan tools and activity will
+          Welcome back, {result.user.name}. Your WedPlan tools and activity will
           be right here as you get started.
         </p>
         <section className="mt-10 rounded-3xl border border-stone-200 bg-white p-8">

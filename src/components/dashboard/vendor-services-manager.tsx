@@ -112,6 +112,7 @@ export function VendorServicesManager() {
       return;
     }
     setSaving(true);
+    setError(null);
     try {
       await vendorApiFetch(`/api/vendor/services/${encodeURIComponent(editingId)}`, {
         method: "PATCH",
@@ -129,8 +130,11 @@ export function VendorServicesManager() {
       setValues(null);
       await load();
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : "Could not update the service.";
+      setError(message);
       toast.error(
-        cause instanceof Error ? cause.message : "Could not update the service.",
+        message,
       );
     } finally {
       setSaving(false);
@@ -139,6 +143,7 @@ export function VendorServicesManager() {
 
   async function toggleAvailability(service: WeddingService) {
     setBusyId(service.id);
+    setError(null);
     try {
       await vendorApiFetch(
         `/api/vendor/services/${encodeURIComponent(service.id)}/availability`,
@@ -159,10 +164,13 @@ export function VendorServicesManager() {
         service.isAvailable ? "Service marked unavailable." : "Service is now available.",
       );
     } catch (cause) {
-      toast.error(
+      const message =
         cause instanceof Error
           ? cause.message
-          : "Could not update service availability.",
+          : "Could not update service availability.";
+      setError(message);
+      toast.error(
+        message,
       );
     } finally {
       setBusyId(null);
@@ -171,6 +179,7 @@ export function VendorServicesManager() {
 
   async function deleteService(service: WeddingService) {
     setBusyId(service.id);
+    setError(null);
     try {
       await vendorApiFetch(`/api/vendor/services/${encodeURIComponent(service.id)}`, {
         method: "DELETE",
@@ -183,8 +192,11 @@ export function VendorServicesManager() {
       }
       toast.success("Service deleted.");
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : "Could not delete the service.";
+      setError(message);
       toast.error(
-        cause instanceof Error ? cause.message : "Could not delete the service.",
+        message,
       );
     } finally {
       setBusyId(null);

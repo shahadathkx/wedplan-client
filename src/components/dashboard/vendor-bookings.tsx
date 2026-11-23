@@ -67,6 +67,7 @@ export function VendorBookings() {
 
   async function respond(booking: VendorBooking, action: "accept" | "reject") {
     setBusyId(booking.id);
+    setError(null);
     try {
       await vendorApiFetch(`/api/vendor/bookings/${encodeURIComponent(booking.id)}`, {
         method: "PATCH",
@@ -82,8 +83,11 @@ export function VendorBookings() {
       );
       toast.success(action === "accept" ? "Booking accepted." : "Booking declined.");
     } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : "Could not update this booking.";
+      setError(message);
       toast.error(
-        cause instanceof Error ? cause.message : "Could not update this booking.",
+        message,
       );
     } finally {
       setBusyId(null);
