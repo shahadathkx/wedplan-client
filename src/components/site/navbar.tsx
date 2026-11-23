@@ -11,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { dashboardPath } from "@/lib/roles";
 
 const publicLinks = [
+  { label: "Home", href: "/" },
+  { label: "Browse Services", href: "/services" },
   { label: "Why WedPlan", href: "/#why-wedplan" },
   { label: "How it works", href: "/#how-it-works" },
 ];
@@ -59,7 +61,7 @@ export function Navbar() {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 md:flex" aria-label="Main navigation">
+        <nav className="hidden items-center gap-5 lg:flex xl:gap-7" aria-label="Main navigation">
           {publicLinks.map((link) => (
             <Link
               key={link.label}
@@ -71,7 +73,7 @@ export function Navbar() {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 lg:flex">
           {isPending ? (
             <span className="h-10 w-28 animate-pulse rounded-full bg-stone-100" />
           ) : user ? (
@@ -127,7 +129,7 @@ export function Navbar() {
 
         <button
           type="button"
-          className="flex size-10 items-center justify-center rounded-full border border-stone-200 text-stone-700 md:hidden"
+          className="flex size-10 items-center justify-center rounded-full border border-stone-200 text-stone-700 lg:hidden"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           onClick={() => setMobileOpen((open) => !open)}
@@ -137,7 +139,7 @@ export function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="border-t border-stone-100 bg-[#fffdfa] px-5 py-4 md:hidden">
+        <div className="border-t border-stone-100 bg-[#fffdfa] px-5 py-4 lg:hidden">
           <nav className="flex flex-col gap-1" aria-label="Mobile navigation">
             {publicLinks.map((link) => (
               <Link

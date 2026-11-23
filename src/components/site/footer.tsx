@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 
 const footerLinks = [
-  { label: "Explore WedPlan", href: "/#how-it-works" },
+  { label: "Browse services", href: "/services" },
+  { label: "Why WedPlan", href: "/#why-wedplan" },
   { label: "How it works", href: "/#how-it-works" },
   { label: "Create an account", href: "/sign-up" },
   { label: "Sign in", href: "/sign-in" },
