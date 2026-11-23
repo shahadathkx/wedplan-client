@@ -45,6 +45,7 @@ const navigation: Record<DashboardRole, DashboardLink[]> = {
     { label: "Manage Users", href: "/admin/dashboard/users", icon: Users, exact: true },
     { label: "Manage Services", href: "/admin/dashboard/services", icon: BriefcaseBusiness, exact: true },
     { label: "Transactions", href: "/admin/dashboard/transactions", icon: CreditCard, exact: true },
+    { label: "Profile Settings", href: "/admin/dashboard/profile", icon: Settings, exact: true },
   ],
 };
 

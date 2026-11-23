@@ -41,11 +41,10 @@ export function SignInForm() {
       const sessionResult = await authClient.getSession();
       const role =
         sessionResult.data?.user.role ??
-        result.data?.user.role ??
-        "customer";
+        result.data?.user.role;
 
       toast.success("You are signed in.");
-      router.push(safeCallback ?? dashboardPath(role));
+      router.push(safeCallback ?? (role ? dashboardPath(role) : "/dashboard"));
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign-in failed.");
