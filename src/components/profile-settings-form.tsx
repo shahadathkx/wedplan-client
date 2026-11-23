@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
-import { LoaderCircle, RefreshCw } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { LoaderCircle, RefreshCw, UploadCloud } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
@@ -12,26 +13,103 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
   const formRef = useRef<HTMLFormElement>(null);
   const [name, setName] = useState<string | null>(null);
   const [businessName, setBusinessName] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+  useEffect(
+    () => () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    },
+    [imagePreview],
+  );
+
+  function chooseImage(file: File | null) {
+    if (!file) {
+      setImageFile(null);
+      setImagePreview("");
+      return;
+    }
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Use a JPG, PNG, or WebP profile image.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Your profile image must be 5 MB or smaller.");
+      return;
+    }
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const nextName = (name ?? session?.user.name ?? "").trim();
+    if (!nextName) {
+      toast.error("Enter your name.");
+      return;
+    }
     setIsSaving(true);
     setSaveError("");
     try {
+      let image = session?.user.image ?? undefined;
+      if (imageFile) {
+        const formData = new FormData();
+        formData.set("image", imageFile);
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        const uploadResult = (await uploadResponse.json()) as {
+          url?: unknown;
+          message?: unknown;
+        };
+        if (!uploadResponse.ok || typeof uploadResult.url !== "string") {
+          throw new Error(
+            typeof uploadResult.message === "string"
+              ? uploadResult.message
+              : "Your profile image could not be uploaded.",
+          );
+        }
+        image = uploadResult.url;
+      }
+
+      const nextBusinessName = (
+        businessName ??
+        session?.user.businessName ??
+        ""
+      ).trim();
       const response = await apiFetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: (name ?? session?.user.name ?? "").trim(),
-          businessName: (businessName ?? session?.user.businessName ?? "").trim(),
+          name: nextName,
+          ...(image ? { image } : {}),
+          ...(session?.user.role === "vendor"
+            ? { businessName: nextBusinessName }
+            : {}),
         }),
       });
       if (!response.ok) {
-        const result = (await response.json()) as { message?: string };
-        throw new Error(result.message || "Profile update failed.");
+        const result = (await response.json()) as { message?: unknown };
+        throw new Error(
+          typeof result.message === "string"
+            ? result.message
+            : "Profile update failed.",
+        );
       }
+      await authClient.updateUser({
+        name: nextName,
+        ...(image ? { image } : {}),
+        ...(session?.user.role === "vendor"
+          ? { businessName: nextBusinessName }
+          : {}),
+      });
+      setImageFile(null);
+      setImagePreview("");
       toast.success("Your profile has been updated.");
     } catch (error) {
       const message =
@@ -55,10 +133,12 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
           Profile settings
         </h1>
         <p className="mt-3 text-sm leading-6 text-stone-600">
-          Keep your details current. Changes are saved to your WedPlan account.
+          Keep your name and profile photo current. Changes are saved to your
+          WedPlan account.
         </p>
         {isPending ? (
           <div className="mt-8 space-y-4" aria-label="Loading profile">
+            <div className="size-20 animate-pulse rounded-full bg-stone-100" />
             <div className="h-12 animate-pulse rounded-xl bg-stone-100" />
             <div className="h-12 animate-pulse rounded-xl bg-stone-100" />
           </div>
@@ -102,10 +182,41 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
                 </button>
               </div>
             )}
+            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+              <div className="relative size-20 overflow-hidden rounded-full border-4 border-white bg-stone-100 shadow-sm">
+                {imagePreview || session.user.image ? (
+                  <Image
+                    src={imagePreview || session.user.image || ""}
+                    alt=""
+                    fill
+                    unoptimized
+                    sizes="80px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full items-center justify-center font-serif text-2xl text-rose-800">
+                    {(name ?? session.user.name).trim().charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border border-stone-200 px-4 text-sm font-semibold text-stone-700 hover:bg-stone-50">
+                <UploadCloud className="size-4" />
+                Change photo
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) =>
+                    chooseImage(event.currentTarget.files?.[0] ?? null)
+                  }
+                  className="sr-only"
+                />
+              </label>
+            </div>
             <label className="block text-sm font-semibold text-stone-700">
               Full name
               <input
                 required
+                maxLength={100}
                 value={name ?? session?.user.name ?? ""}
                 onChange={(event) => setName(event.target.value)}
                 className="mt-2 h-12 w-full rounded-xl border border-stone-200 px-4 font-normal outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
@@ -115,7 +226,7 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
               <label className="block text-sm font-semibold text-stone-700">
                 Business name
                 <input
-                  value={businessName ?? session?.user.businessName ?? ""}
+                  value={businessName ?? session.user.businessName ?? ""}
                   onChange={(event) => setBusinessName(event.target.value)}
                   className="mt-2 h-12 w-full rounded-xl border border-stone-200 px-4 font-normal outline-none focus:border-rose-400 focus:ring-4 focus:ring-rose-100"
                 />
