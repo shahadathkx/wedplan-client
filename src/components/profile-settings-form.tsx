@@ -104,9 +104,6 @@ export function ProfileSettingsForm({ embedded = false }: { embedded?: boolean }
       await authClient.updateUser({
         name: nextName,
         ...(image ? { image } : {}),
-        ...(session?.user.role === "vendor"
-          ? { businessName: nextBusinessName }
-          : {}),
       });
       setImageFile(null);
       setImagePreview("");
