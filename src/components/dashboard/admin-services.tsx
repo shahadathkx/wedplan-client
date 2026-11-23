@@ -45,7 +45,12 @@ export function AdminServices() {
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load services.");
+          const message =
+            cause instanceof Error
+              ? cause.message
+              : "Unable to load services.";
+          setError(message);
+          toast.error(message);
         }
       })
       .finally(() => {
@@ -64,7 +69,12 @@ export function AdminServices() {
     try {
       setServices(await load(undefined, search, status));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load services.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Unable to load services.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -72,6 +82,7 @@ export function AdminServices() {
 
   async function changeStatus(service: AdminService, nextStatus: AdminService["status"]) {
     setBusyId(service.id);
+    setError(null);
     try {
       await adminApiFetch(
         `/api/admin/services/${encodeURIComponent(service.id)}/status`,
@@ -88,7 +99,12 @@ export function AdminServices() {
       );
       toast.success(`Service ${nextStatus}.`);
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not update the service.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Could not update the service.";
+      setError(message);
+      toast.error(message);
     } finally {
       setBusyId(null);
     }
@@ -99,6 +115,7 @@ export function AdminServices() {
       return;
     }
     setBusyId(service.id);
+    setError(null);
     try {
       await adminApiFetch(`/api/admin/services/${encodeURIComponent(service.id)}`, {
         method: "DELETE",
@@ -106,7 +123,12 @@ export function AdminServices() {
       setServices((current) => current?.filter((item) => item.id !== service.id) ?? null);
       toast.success("Service deleted.");
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not delete the service.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Could not delete the service.";
+      setError(message);
+      toast.error(message);
     } finally {
       setBusyId(null);
     }

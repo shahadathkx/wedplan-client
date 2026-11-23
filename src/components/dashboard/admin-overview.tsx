@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import {
   BriefcaseBusiness,
-  CalendarDays,
   CreditCard,
   LoaderCircle,
   RefreshCw,
@@ -17,6 +16,7 @@ import {
   normalizeAdminStats,
   type AdminStats,
 } from "@/lib/admin-api";
+import { toast } from "sonner";
 
 export function AdminOverview() {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -38,7 +38,12 @@ export function AdminOverview() {
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load admin statistics.");
+          const message =
+            cause instanceof Error
+              ? cause.message
+              : "Unable to load admin statistics.";
+          setError(message);
+          toast.error(message);
         }
       })
       .finally(() => {
@@ -55,7 +60,12 @@ export function AdminOverview() {
     try {
       setStats(await load());
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load admin statistics.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Unable to load admin statistics.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -67,7 +77,6 @@ export function AdminOverview() {
     { label: "Customers", value: stats?.totalCustomers, icon: Users },
     { label: "Total services", value: stats?.totalServices, icon: BriefcaseBusiness },
     { label: "Pending services", value: stats?.pendingServices, icon: RefreshCw },
-    { label: "Total bookings", value: stats?.totalBookings, icon: CalendarDays },
     { label: "Transactions", value: stats?.totalTransactions, icon: CreditCard },
   ];
 
@@ -105,6 +114,22 @@ export function AdminOverview() {
           </article>
         ))}
       </section>
+
+      {!loading && !error && stats && (
+        stats.totalUsers === 0 &&
+        stats.totalVendors === 0 &&
+        stats.totalCustomers === 0 &&
+        stats.totalServices === 0 &&
+        stats.pendingServices === 0 &&
+        stats.totalTransactions === 0
+      ) && (
+        <section className="mt-8 rounded-3xl border border-dashed border-stone-300 bg-white px-6 py-12 text-center">
+          <h2 className="font-serif text-2xl text-stone-900">No platform activity yet</h2>
+          <p className="mt-2 text-sm text-stone-600">
+            User accounts, service listings, and transactions will appear here.
+          </p>
+        </section>
+      )}
 
       {stats && stats.revenueByCurrency.length > 0 && (
         <section className="mt-8 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">

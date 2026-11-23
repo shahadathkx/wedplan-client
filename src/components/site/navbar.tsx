@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { dashboardPath } from "@/lib/roles";
 
 const publicLinks = [
   { label: "Why WedPlan", href: "/#why-wedplan" },
@@ -88,7 +89,7 @@ export function Navbar() {
                   <p className="truncate text-xs text-stone-500">{user.email}</p>
                 </div>
                 <Link
-                  href={`/${user.role ?? "customer"}/dashboard`}
+                  href={dashboardPath(user.role)}
                   className="mt-1 block rounded-xl px-3 py-2.5 text-sm text-stone-700 hover:bg-rose-50 hover:text-rose-900"
                 >
                   Dashboard
@@ -158,7 +159,7 @@ export function Navbar() {
                   </div>
                 </div>
                 <Link
-                  href={`/${user.role ?? "customer"}/dashboard`}
+                  href={dashboardPath(user.role)}
                   onClick={() => setMobileOpen(false)}
                   className="rounded-xl px-3 py-3 text-sm font-medium text-stone-700 hover:bg-rose-50"
                 >

@@ -4,8 +4,11 @@ import { dashboardPath } from "@/lib/roles";
 
 const protectedPaths = [
   "/dashboard",
+  "/customer",
   "/customer/dashboard",
+  "/vendor",
   "/vendor/dashboard",
+  "/admin",
   "/admin/dashboard",
   "/profile-settings",
   "/payment-success",
@@ -26,10 +29,9 @@ export async function proxy(request: NextRequest) {
       pathname,
       error,
     });
-    return NextResponse.json(
-      { message: "Unable to verify your session. Please try again." },
-      { status: 503, headers: { "Cache-Control": "no-store" } },
-    );
+    const signInUrl = new URL("/sign-in", request.url);
+    signInUrl.searchParams.set("callbackURL", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
   if (!session || session.user.isBlocked) {
@@ -63,8 +65,11 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
+    "/customer/:path*",
     "/customer/dashboard/:path*",
+    "/vendor/:path*",
     "/vendor/dashboard/:path*",
+    "/admin/:path*",
     "/admin/dashboard/:path*",
     "/profile-settings/:path*",
     "/payment-success/:path*",

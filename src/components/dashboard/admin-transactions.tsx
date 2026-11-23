@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import {
   adminApiFetch,
   formatCurrencyAmount,
@@ -38,7 +39,12 @@ export function AdminTransactions() {
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+          const message =
+            cause instanceof Error
+              ? cause.message
+              : "Unable to load transactions.";
+          setError(message);
+          toast.error(message);
         }
       })
       .finally(() => {
@@ -53,7 +59,12 @@ export function AdminTransactions() {
     try {
       setTransactions(await load());
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load transactions.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Unable to load transactions.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }

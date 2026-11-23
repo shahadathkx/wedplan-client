@@ -42,7 +42,10 @@ export function AdminUsers() {
       })
       .catch((cause: unknown) => {
         if (!controller.signal.aborted) {
-          setError(cause instanceof Error ? cause.message : "Unable to load users.");
+          const message =
+            cause instanceof Error ? cause.message : "Unable to load users.";
+          setError(message);
+          toast.error(message);
         }
       })
       .finally(() => {
@@ -61,14 +64,34 @@ export function AdminUsers() {
     try {
       setUsers(await load(undefined, search, role));
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Unable to load users.");
+      const message =
+        cause instanceof Error ? cause.message : "Unable to load users.";
+      setError(message);
+      toast.error(message);
     } finally {
       setLoading(false);
     }
   }
 
   async function toggleBlock(user: AdminUser) {
+    if (
+      user.id === session?.user.id &&
+      !user.isBlocked
+    ) {
+      toast.error("You cannot block your own admin account.");
+      return;
+    }
+    if (
+      !window.confirm(
+        user.isBlocked
+          ? `Unblock "${user.name}"?`
+          : `Block "${user.name}"? They will lose access to protected features.`,
+      )
+    ) {
+      return;
+    }
     setBusyId(user.id);
+    setError(null);
     try {
       await adminApiFetch(`/api/admin/users/${encodeURIComponent(user.id)}/block`, {
         method: "PATCH",
@@ -80,7 +103,12 @@ export function AdminUsers() {
       if (details?.id === user.id) setDetails(updated);
       toast.success(updated.isBlocked ? "User blocked." : "User unblocked.");
     } catch (cause) {
-      toast.error(cause instanceof Error ? cause.message : "Could not update this user.");
+      const message =
+        cause instanceof Error
+          ? cause.message
+          : "Could not update this user.";
+      setError(message);
+      toast.error(message);
     } finally {
       setBusyId(null);
     }
@@ -177,7 +205,15 @@ export function AdminUsers() {
               <div><dt className="text-xs font-bold uppercase text-stone-400">Status</dt><dd className="mt-1 text-stone-700">{details.isBlocked ? "Blocked" : "Active"}</dd></div>
               {details.createdAt && <div><dt className="text-xs font-bold uppercase text-stone-400">Joined</dt><dd className="mt-1 text-stone-700">{formatDate(details.createdAt)}</dd></div>}
             </dl>
-            <button type="button" disabled={busyId === details.id} onClick={() => void toggleBlock(details)} className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-5 text-sm font-semibold text-white disabled:opacity-60">
+            <button
+              type="button"
+              disabled={
+                busyId === details.id ||
+                (details.id === session?.user.id && !details.isBlocked)
+              }
+              onClick={() => void toggleBlock(details)}
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-stone-900 px-5 text-sm font-semibold text-white disabled:opacity-60"
+            >
               {busyId === details.id ? <LoaderCircle className="size-4 animate-spin" /> : <Shield className="size-4" />}
               {details.isBlocked ? "Unblock user" : "Block user"}
             </button>

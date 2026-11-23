@@ -38,8 +38,14 @@ export function SignInForm() {
         throw new Error(result.error.message || "Sign-in failed.");
       }
 
+      const sessionResult = await authClient.getSession();
+      const role =
+        sessionResult.data?.user.role ??
+        result.data?.user.role ??
+        "customer";
+
       toast.success("You are signed in.");
-      router.push(safeCallback ?? dashboardPath(result.data?.user.role));
+      router.push(safeCallback ?? dashboardPath(role));
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign-in failed.");

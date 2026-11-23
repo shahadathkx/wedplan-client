@@ -82,8 +82,14 @@ export function SignUpForm() {
         throw new Error(result.error.message || "Account creation failed.");
       }
 
+      const sessionResult = await authClient.getSession();
+      const createdRole =
+        sessionResult.data?.user.role ??
+        result.data?.user.role ??
+        role;
+
       toast.success("Your account is ready. Welcome to WedPlan!");
-      router.push(dashboardPath(result.data?.user.role));
+      router.push(dashboardPath(createdRole));
       router.refresh();
     } catch (error) {
       toast.error(
