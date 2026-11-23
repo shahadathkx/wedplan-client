@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
-import { dashboardPath } from "@/lib/roles";
+import { getDashboardPath } from "@/lib/roles";
 
 const protectedPaths = [
   "/dashboard",
@@ -23,7 +23,10 @@ export async function proxy(request: NextRequest) {
 
   let session: Awaited<ReturnType<typeof auth.api.getSession>>;
   try {
-    session = await auth.api.getSession({ headers: request.headers });
+    session = await auth.api.getSession({
+      headers: request.headers,
+      query: { disableCookieCache: true },
+    });
   } catch (error) {
     console.error("[auth] Session lookup failed in route proxy", {
       pathname,
@@ -44,7 +47,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname === "/dashboard") {
-    return NextResponse.redirect(new URL(dashboardPath(session.user.role), request.url));
+    return NextResponse.redirect(new URL(getDashboardPath(session.user.role), request.url));
   }
 
   const requestedRole = pathname.split("/")[1];
@@ -55,7 +58,7 @@ export async function proxy(request: NextRequest) {
     requestedRole !== session.user.role
   ) {
     return NextResponse.redirect(
-      new URL(dashboardPath(session.user.role), request.url),
+      new URL(getDashboardPath(session.user.role), request.url),
     );
   }
 

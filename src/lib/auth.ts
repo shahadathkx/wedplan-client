@@ -36,6 +36,11 @@ export const auth = betterAuth({
     enabled: true,
     minPasswordLength: 6,
   },
+  session: {
+    cookieCache: {
+      enabled: false,
+    },
+  },
   databaseHooks: {
     user: {
       create: {

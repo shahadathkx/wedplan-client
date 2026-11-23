@@ -17,7 +17,10 @@ export async function generateMetadata({ params }: ServicePageProps) {
 
 export default async function ServicePage({ params }: ServicePageProps) {
   const { id } = await params;
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await auth.api.getSession({
+    headers: await headers(),
+    query: { disableCookieCache: true },
+  });
   if (!session || session.user.isBlocked) {
     const signIn = new URLSearchParams({
       callbackURL: serviceDetailsPath(id),
@@ -33,7 +36,7 @@ export default async function ServicePage({ params }: ServicePageProps) {
       serviceId={id}
       currentUser={{
         id: session.user.id,
-        role: session.user.role ?? "customer",
+        role: session.user.role ?? "",
       }}
     />
   );
