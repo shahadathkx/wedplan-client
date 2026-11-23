@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import { getDashboardPath } from "@/lib/roles";
+import { getSessionCookie } from "better-auth/cookies";
 
 const protectedPaths = [
   "/dashboard",
@@ -21,45 +20,10 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  let session: Awaited<ReturnType<typeof auth.api.getSession>>;
-  try {
-    session = await auth.api.getSession({
-      headers: request.headers,
-      query: { disableCookieCache: true },
-    });
-  } catch (error) {
-    console.error("[auth] Session lookup failed in route proxy", {
-      pathname,
-      error,
-    });
+  if (!getSessionCookie(request)) {
     const signInUrl = new URL("/sign-in", request.url);
     signInUrl.searchParams.set("callbackURL", pathname);
     return NextResponse.redirect(signInUrl);
-  }
-
-  if (!session || session.user.isBlocked) {
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("callbackURL", pathname);
-    if (session?.user.isBlocked) {
-      signInUrl.searchParams.set("blocked", "1");
-    }
-    return NextResponse.redirect(signInUrl);
-  }
-
-  if (pathname === "/dashboard") {
-    return NextResponse.redirect(new URL(getDashboardPath(session.user.role), request.url));
-  }
-
-  const requestedRole = pathname.split("/")[1];
-  if (
-    (requestedRole === "customer" ||
-      requestedRole === "vendor" ||
-      requestedRole === "admin") &&
-    requestedRole !== session.user.role
-  ) {
-    return NextResponse.redirect(
-      new URL(getDashboardPath(session.user.role), request.url),
-    );
   }
 
   return NextResponse.next();

@@ -60,6 +60,42 @@ test("service list fetch uses NEXT_PUBLIC_API_URL and treats an empty result as 
   }
 });
 
+test("cached service lists call the same-origin cache route", async () => {
+  const previousApiUrl = process.env.NEXT_PUBLIC_API_URL;
+  const previousFetch = globalThis.fetch;
+  const requestUrls: string[] = [];
+
+  process.env.NEXT_PUBLIC_API_URL = "https://api.example.test/";
+  globalThis.fetch = async (input) => {
+    requestUrls.push(String(input));
+    return new Response(JSON.stringify({ services: [] }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+
+  try {
+    assert.deepEqual(
+      await fetchServiceList(
+        "/api/services/featured?limit=6",
+        undefined,
+        { cacheFor60Seconds: true },
+      ),
+      [],
+    );
+    assert.deepEqual(requestUrls, [
+      "/api/public-services?path=%2Fapi%2Fservices%2Ffeatured%3Flimit%3D6",
+    ]);
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousApiUrl === undefined) {
+      delete process.env.NEXT_PUBLIC_API_URL;
+    } else {
+      process.env.NEXT_PUBLIC_API_URL = previousApiUrl;
+    }
+  }
+});
+
 test("service fetch failure logs the exact request URL and original error", async () => {
   const previousApiUrl = process.env.NEXT_PUBLIC_API_URL;
   const previousFetch = globalThis.fetch;

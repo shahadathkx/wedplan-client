@@ -1,23 +1,17 @@
-import type { ReactNode } from "react";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell";
-import { DashboardAuthError } from "@/components/dashboard/dashboard-auth-error";
-import { requireDashboardUser } from "@/lib/dashboard-auth";
+import { Suspense, type ReactNode } from "react";
+import { DashboardGate } from "@/components/dashboard/dashboard-gate";
+import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
 
 export const instant = false;
 
-export default async function CustomerDashboardLayout({
+export default function CustomerDashboardLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  const result = await requireDashboardUser("customer");
-  if (result.status === "error") {
-    return <DashboardAuthError message={result.message} />;
-  }
-
   return (
-    <DashboardShell role="customer" userName={result.user.name}>
-      {children}
-    </DashboardShell>
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardGate role="customer">{children}</DashboardGate>
+    </Suspense>
   );
 }

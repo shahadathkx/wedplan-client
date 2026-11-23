@@ -32,7 +32,9 @@ export function BrowseServices() {
     params.set("page", String(page));
     params.set("limit", String(pageSize));
 
-    fetchServiceList(`/api/services?${params.toString()}`, controller.signal)
+    fetchServiceList(`/api/services?${params.toString()}`, controller.signal, {
+      cacheFor60Seconds: true,
+    })
       .then((loadedServices) => {
         setServices((current) =>
           page === 1 ? loadedServices : [...current, ...loadedServices],

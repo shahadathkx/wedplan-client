@@ -23,7 +23,11 @@ export function FeaturedServices() {
   useEffect(() => {
     const controller = new AbortController();
 
-    fetchServiceList(`/api/services/featured?limit=${featuredCount}`, controller.signal)
+    fetchServiceList(
+      `/api/services/featured?limit=${featuredCount}`,
+      controller.signal,
+      { cacheFor60Seconds: true },
+    )
       .then(setServices)
       .catch((cause: unknown) => {
         if (cause instanceof DOMException && cause.name === "AbortError") {

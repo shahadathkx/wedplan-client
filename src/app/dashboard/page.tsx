@@ -1,23 +1,36 @@
-import { headers } from "next/headers";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { connection } from "next/server";
-import { auth } from "@/lib/auth";
+import { DashboardAuthError } from "@/components/dashboard/dashboard-auth-error";
+import { DashboardLoading } from "@/components/dashboard/dashboard-loading";
+import { getServerSession } from "@/lib/dashboard-auth";
 import { getDashboardPath } from "@/lib/roles";
 
 export const instant = false;
 
-export default async function DashboardRedirect() {
-  await connection();
-  let session: Awaited<ReturnType<typeof auth.api.getSession>>;
-  try {
-    session = await auth.api.getSession({
-      headers: await headers(),
-      query: { disableCookieCache: true },
-    });
-  } catch (error) {
-    console.error("[auth] Unable to resolve dashboard redirect", error);
-    redirect("/sign-in?callbackURL=%2Fdashboard");
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<DashboardLoading />}>
+      <DashboardRedirect />
+    </Suspense>
+  );
+}
+
+async function DashboardRedirect() {
+  const result = await getServerSession();
+  if (result.status === "error") {
+    return (
+      <DashboardAuthError
+        message={
+          process.env.NODE_ENV === "development" &&
+          result.error instanceof Error
+            ? result.error.message
+            : "We couldn't verify your sign-in. Please try again."
+        }
+      />
+    );
   }
+
+  const session = result.session;
   if (!session) {
     redirect("/sign-in?callbackURL=%2Fdashboard");
   }

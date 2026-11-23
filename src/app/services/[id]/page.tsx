@@ -1,7 +1,9 @@
-import { headers } from "next/headers";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { DashboardAuthError } from "@/components/dashboard/dashboard-auth-error";
 import { ServiceDetail } from "@/components/services/service-detail";
-import { auth } from "@/lib/auth";
+import { ServiceDetailLoading } from "@/components/services/service-detail-loading";
+import { getServerSession } from "@/lib/dashboard-auth";
 import { serviceDetailsPath } from "@/lib/services";
 
 export const instant = false;
@@ -15,12 +17,30 @@ export async function generateMetadata({ params }: ServicePageProps) {
   return { title: `Wedding service ${id}` };
 }
 
-export default async function ServicePage({ params }: ServicePageProps) {
+export default function ServicePage(props: ServicePageProps) {
+  return (
+    <Suspense fallback={<ServiceDetailLoading />}>
+      <ServicePageContent params={props.params} />
+    </Suspense>
+  );
+}
+
+async function ServicePageContent({ params }: ServicePageProps) {
   const { id } = await params;
-  const session = await auth.api.getSession({
-    headers: await headers(),
-    query: { disableCookieCache: true },
-  });
+  const result = await getServerSession();
+  if (result.status === "error") {
+    return (
+      <DashboardAuthError
+        message={
+          process.env.NODE_ENV === "development" &&
+          result.error instanceof Error
+            ? result.error.message
+            : "We couldn't verify your sign-in. Please try again."
+        }
+      />
+    );
+  }
+  const session = result.session;
   if (!session || session.user.isBlocked) {
     const signIn = new URLSearchParams({
       callbackURL: serviceDetailsPath(id),

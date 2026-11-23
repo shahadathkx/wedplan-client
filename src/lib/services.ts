@@ -177,6 +177,7 @@ async function requestServiceApi(path: string, signal?: AbortSignal) {
 export async function fetchServiceList(
   endpoint: string,
   signal?: AbortSignal,
+  options: { cacheFor60Seconds?: boolean } = {},
 ) {
   let requestUrl: URL;
   try {
@@ -192,13 +193,25 @@ export async function fetchServiceList(
 
   let response: Response;
   try {
-    response = await publicApiFetch(endpoint, { signal });
+    response = options.cacheFor60Seconds
+      ? await fetch(
+          `/api/public-services?path=${encodeURIComponent(endpoint)}`,
+          { signal, cache: "no-store" },
+        )
+      : await publicApiFetch(endpoint, { signal });
   } catch (error) {
     if (
       signal?.aborted ||
       (error instanceof DOMException && error.name === "AbortError")
     ) {
       throw error;
+    }
+    if (options.cacheFor60Seconds) {
+      console.error("[services] Request failed", {
+        url: requestUrl.href,
+        envVar: "NEXT_PUBLIC_API_URL",
+        error,
+      });
     }
     throw error;
   }

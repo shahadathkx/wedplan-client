@@ -7,6 +7,7 @@ import { z } from "zod";
 
 const globalForMongo = globalThis as typeof globalThis & {
   mongoClient?: MongoClient;
+  mongoClientPromise?: Promise<MongoClient>;
 };
 
 const mongoUri = process.env.MONGODB_URI?.trim();
@@ -17,15 +18,34 @@ if (!mongoUri && process.env.NODE_ENV === "production") {
 const mongoClient =
   globalForMongo.mongoClient ??
   new MongoClient(mongoUri || "mongodb://127.0.0.1:27017");
+globalForMongo.mongoClient = mongoClient;
 
-if (process.env.NODE_ENV !== "production") {
-  globalForMongo.mongoClient = mongoClient;
-}
-
-const database = mongoClient.db(process.env.MONGODB_DB || "wedplan");
+const databaseName =
+  process.env.DB_NAME?.trim() ||
+  process.env.MONGODB_DB?.trim() ||
+  "wedplan";
+const database = mongoClient.db(databaseName);
 console.info("[auth] MongoDB database configured", {
-  databaseName: database.databaseName,
+  databaseName,
 });
+
+export async function connectAuthDatabase() {
+  if (!globalForMongo.mongoClientPromise) {
+    const connectionPromise = mongoClient.connect();
+    globalForMongo.mongoClientPromise = connectionPromise;
+    void connectionPromise.catch((error: unknown) => {
+      if (globalForMongo.mongoClientPromise === connectionPromise) {
+        globalForMongo.mongoClientPromise = undefined;
+      }
+      console.error("[auth] MongoDB connection failed", {
+        databaseName,
+        error,
+      });
+    });
+  }
+  await globalForMongo.mongoClientPromise;
+  return database;
+}
 
 export const auth = betterAuth({
   appName: "WedPlan",
@@ -38,7 +58,8 @@ export const auth = betterAuth({
   },
   session: {
     cookieCache: {
-      enabled: false,
+      enabled: true,
+      maxAge: 60,
     },
   },
   databaseHooks: {
