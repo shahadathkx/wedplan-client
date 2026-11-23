@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { getDashboardPath } from "@/lib/roles";
 
 export function GoogleButton({
   role,
@@ -31,7 +32,20 @@ export function GoogleButton({
         window.location.assign(result.data.url);
         return;
       }
-      router.push("/dashboard");
+      const sessionResult = await authClient.getSession({
+        query: { disableCookieCache: true },
+      });
+      const rolePath = getDashboardPath(sessionResult.data?.user.role);
+      const isDashboardCallback =
+        callbackURL === "/dashboard" ||
+        /^\/(admin|vendor|customer)(\/|$)/.test(callbackURL);
+      router.push(
+        rolePath === "/"
+          ? "/"
+          : isDashboardCallback
+            ? rolePath
+            : callbackURL,
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Google sign-in failed.",

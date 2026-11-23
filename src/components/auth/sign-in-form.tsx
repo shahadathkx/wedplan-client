@@ -8,7 +8,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { dashboardPath } from "@/lib/roles";
+import { getDashboardPath } from "@/lib/roles";
 
 const fieldClassName =
   "mt-2 h-12 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100";
@@ -24,6 +24,12 @@ export function SignInForm() {
     callbackURL?.startsWith("/") && !callbackURL.startsWith("//")
       ? callbackURL
       : undefined;
+  const isDashboardCallback =
+    safeCallback === "/dashboard" ||
+    (safeCallback !== undefined &&
+      /^\/(admin|vendor|customer)(\/|$)/.test(safeCallback));
+  const googleCallbackURL =
+    safeCallback && !isDashboardCallback ? safeCallback : "/dashboard";
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -38,13 +44,19 @@ export function SignInForm() {
         throw new Error(result.error.message || "Sign-in failed.");
       }
 
-      const sessionResult = await authClient.getSession();
-      const role =
-        sessionResult.data?.user.role ??
-        result.data?.user.role;
+      const sessionResult = await authClient.getSession({
+        query: { disableCookieCache: true },
+      });
+      const role = sessionResult.data?.user.role;
 
       toast.success("You are signed in.");
-      router.push(safeCallback ?? (role ? dashboardPath(role) : "/dashboard"));
+      router.push(
+        getDashboardPath(role) === "/"
+          ? "/"
+          : safeCallback && !isDashboardCallback
+            ? safeCallback
+            : getDashboardPath(role),
+      );
       router.refresh();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Sign-in failed.");
@@ -111,7 +123,7 @@ export function SignInForm() {
         <span className="h-px flex-1 bg-stone-200" />
       </div>
       <GoogleButton
-        callbackURL={safeCallback ?? dashboardPath()}
+        callbackURL={googleCallbackURL}
       />
     </AuthCard>
   );

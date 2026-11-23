@@ -139,7 +139,9 @@ function DashboardNavigation({
           WedPlan
         </Link>
         <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.18em] text-rose-700">
-          {role} workspace
+          {role === "admin"
+            ? "Admin Workspace"
+            : `${role.charAt(0).toUpperCase()}${role.slice(1)} Workspace`}
         </p>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-5" aria-label={`${role} dashboard`}>

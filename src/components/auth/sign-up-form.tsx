@@ -8,7 +8,7 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { GoogleButton } from "@/components/auth/google-button";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { dashboardPath } from "@/lib/roles";
+import { getDashboardPath } from "@/lib/roles";
 
 const fieldClassName =
   "mt-2 h-12 w-full rounded-xl border border-stone-200 bg-white px-4 text-sm text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-rose-400 focus:ring-4 focus:ring-rose-100";
@@ -82,14 +82,16 @@ export function SignUpForm() {
         throw new Error(result.error.message || "Account creation failed.");
       }
 
-      const sessionResult = await authClient.getSession();
+      const sessionResult = await authClient.getSession({
+        query: { disableCookieCache: true },
+      });
       const createdRole =
         sessionResult.data?.user.role ??
         result.data?.user.role ??
         role;
 
       toast.success("Your account is ready. Welcome to WedPlan!");
-      router.push(dashboardPath(createdRole));
+      router.push(getDashboardPath(createdRole));
       router.refresh();
     } catch (error) {
       toast.error(

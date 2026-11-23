@@ -1,6 +1,12 @@
-export function dashboardPath(role?: string | null) {
-  if (role === "vendor" || role === "admin") {
-    return `/${role}/dashboard`;
+export function getDashboardPath(role?: string | null) {
+  switch (role) {
+    case "admin":
+      return "/admin/dashboard";
+    case "vendor":
+      return "/vendor/dashboard";
+    case "customer":
+      return "/customer/dashboard";
+    default:
+      return "/";
   }
-  return "/customer/dashboard";
 }

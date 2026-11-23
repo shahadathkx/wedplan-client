@@ -5,13 +5,16 @@ import {
   formatCurrencyAmount,
   normalizeAdminStats,
 } from "./admin-api";
-import { dashboardPath } from "./roles";
+import { getDashboardPath } from "./roles";
 import { normalizeVendorStats } from "./vendor-api";
 
 test("dashboard routes are selected from the authenticated role", () => {
-  assert.equal(dashboardPath("admin"), "/admin/dashboard");
-  assert.equal(dashboardPath("vendor"), "/vendor/dashboard");
-  assert.equal(dashboardPath("customer"), "/customer/dashboard");
+  assert.equal(getDashboardPath("admin"), "/admin/dashboard");
+  assert.equal(getDashboardPath("vendor"), "/vendor/dashboard");
+  assert.equal(getDashboardPath("customer"), "/customer/dashboard");
+  assert.equal(getDashboardPath(undefined), "/");
+  assert.equal(getDashboardPath(null), "/");
+  assert.equal(getDashboardPath("unrecognized"), "/");
 });
 
 test("admin API failures for unauthorized and forbidden responses are explicit", async () => {
